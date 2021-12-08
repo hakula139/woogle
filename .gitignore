@@ -1,8 +1,8 @@
 ## Customized
 
 .DS_STORE
-/data/
 /logs/
+/input/
 /output/
 /target/
 
