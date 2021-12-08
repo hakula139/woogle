@@ -11,6 +11,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.StringTokenizer;
 
 public class InvertedIndex {
@@ -38,10 +39,10 @@ public class InvertedIndex {
     public void map(Object key, Text value, Context context)
         throws IOException, InterruptedException {
       var split = (FileSplit) context.getInputSplit();
-      var it = new StringTokenizer(value.toString());
+      var it = new StringTokenizer(value.toString(), " \t\n\r\f,.:;?!()[]'‘’\"“”—");
       while (it.hasMoreTokens()) {
         var filename = split.getPath().getName();
-        var token = it.nextToken();
+        var token = it.nextToken().toLowerCase(Locale.ROOT);
         this.key.set(token + DELIM + filename);
         context.write(this.key, count);
       }
