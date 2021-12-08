@@ -16,6 +16,20 @@ import java.util.StringTokenizer;
 public class InvertedIndex {
   private static final String DELIM = ":";
 
+  public static void main(String[] args) throws Exception {
+    Configuration conf = new Configuration();
+    Job job = Job.getInstance(conf, "inverted index");
+    job.setJarByClass(InvertedIndex.class);
+    job.setMapperClass(TokenMapper.class);
+    job.setCombinerClass(TokenCountCombiner.class);
+    job.setReducerClass(TokenCountReducer.class);
+    job.setOutputKeyClass(Text.class);
+    job.setOutputValueClass(Text.class);
+    FileInputFormat.addInputPath(job, new Path(args[0]));
+    FileOutputFormat.setOutputPath(job, new Path(args[1]));
+    System.exit(job.waitForCompletion(true) ? 0 : 1);
+  }
+
   public static class TokenMapper extends Mapper<Object, Text, Text, Text> {
     private final Text key = new Text();
     private final Text count = new Text("1");
@@ -66,19 +80,5 @@ public class InvertedIndex {
       result.set(countList.toString());
       context.write(key, result);
     }
-  }
-
-  public static void main(String[] args) throws Exception {
-    Configuration conf = new Configuration();
-    Job job = Job.getInstance(conf, "inverted index");
-    job.setJarByClass(InvertedIndex.class);
-    job.setMapperClass(TokenMapper.class);
-    job.setCombinerClass(TokenCountCombiner.class);
-    job.setReducerClass(TokenCountReducer.class);
-    job.setOutputKeyClass(Text.class);
-    job.setOutputValueClass(Text.class);
-    FileInputFormat.addInputPath(job, new Path(args[0]));
-    FileOutputFormat.setOutputPath(job, new Path(args[1]));
-    System.exit(job.waitForCompletion(true) ? 0 : 1);
   }
 }
