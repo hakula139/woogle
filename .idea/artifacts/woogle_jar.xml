@@ -1,6 +1,6 @@
 <component name="ArtifactManager">
   <artifact type="jar" name="woogle:jar">
-    <output-path>$PROJECT_DIR$/out/artifacts/woogle_jar</output-path>
+    <output-path>$PROJECT_DIR$/jar</output-path>
     <root id="archive" name="woogle.jar">
       <element id="module-output" name="woogle" />
       <element id="extracted-dir" path="$MAVEN_REPOSITORY$/commons-net/commons-net/3.6/commons-net-3.6.jar" path-in-jar="/" />
