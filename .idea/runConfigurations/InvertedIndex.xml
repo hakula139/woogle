@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="InvertedIndex" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="xyz.hakula.InvertedIndex" />
+    <module name="woogle" />
+    <option name="PROGRAM_PARAMETERS" value="data output" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
