@@ -1,6 +1,8 @@
 package xyz.hakula;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -9,18 +11,33 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.util.ToolRunner;
 
 import java.io.IOException;
 import java.util.Locale;
 import java.util.StringTokenizer;
 
-public class InvertedIndex {
+public class InvertedIndex extends Configured implements Tool {
   private static final String DELIM = ":";
 
-  public static void main(String[] args) throws Exception {
-    Configuration conf = new Configuration();
-    Job job = Job.getInstance(conf, "inverted index");
-    job.setJarByClass(InvertedIndex.class);
+  public static void main(String[] args) {
+    try {
+      var config = new Configuration();
+      var outputPath = new Path(args[1]);
+      var fs = FileSystem.get(config);
+      if (fs.exists(outputPath)) {
+        fs.delete(outputPath, true);
+      }
+      System.exit(ToolRunner.run(config, new InvertedIndex(), args));
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+
+  public int run(String[] args) throws Exception {
+    var job = Job.getInstance(getConf(), InvertedIndex.class.getName());
+    job.setJarByClass(getClass());
     job.setMapperClass(TokenMapper.class);
     job.setCombinerClass(TokenCountCombiner.class);
     job.setReducerClass(TokenCountReducer.class);
@@ -28,7 +45,7 @@ public class InvertedIndex {
     job.setOutputValueClass(Text.class);
     FileInputFormat.addInputPath(job, new Path(args[0]));
     FileOutputFormat.setOutputPath(job, new Path(args[1]));
-    System.exit(job.waitForCompletion(true) ? 0 : 1);
+    return job.waitForCompletion(true) ? 0 : 1;
   }
 
   public static class TokenMapper extends Mapper<Object, Text, Text, Text> {
