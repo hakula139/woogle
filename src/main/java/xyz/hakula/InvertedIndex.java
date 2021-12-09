@@ -7,6 +7,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
@@ -19,16 +20,24 @@ import java.util.Locale;
 import java.util.StringTokenizer;
 
 public class InvertedIndex extends Configured implements Tool {
-  private static final String DELIM = ":";
+  private static final String GLOBAL_SIGN = "$_";
+  private static final String DELIM = "::";
+  private static final String POS_DELIM = ",";
+  private static long inputFileCount;
 
   public static void main(String[] args) {
     try {
       var config = new Configuration();
-      var outputPath = new Path(args[1]);
       var fs = FileSystem.get(config);
+
+      var inputPath = new Path(args[0]);
+      inputFileCount = fs.getContentSummary(inputPath).getFileCount();
+
+      var outputPath = new Path(args[1]);
       if (fs.exists(outputPath)) {
         fs.delete(outputPath, true);
       }
+
       System.exit(ToolRunner.run(config, new InvertedIndex(), args));
     } catch (Exception e) {
       e.printStackTrace();
@@ -38,30 +47,68 @@ public class InvertedIndex extends Configured implements Tool {
   public int run(String[] args) throws Exception {
     var job = Job.getInstance(getConf(), InvertedIndex.class.getName());
     job.setJarByClass(getClass());
+
     job.setMapperClass(TokenMapper.class);
     job.setCombinerClass(TokenCountCombiner.class);
+    job.setPartitionerClass(Multiplexer.class);
+    job.setNumReduceTasks(16);
     job.setReducerClass(TokenCountReducer.class);
+
     job.setOutputKeyClass(Text.class);
     job.setOutputValueClass(Text.class);
+
     FileInputFormat.addInputPath(job, new Path(args[0]));
     FileOutputFormat.setOutputPath(job, new Path(args[1]));
+
     return job.waitForCompletion(true) ? 0 : 1;
   }
 
   public static class TokenMapper extends Mapper<Object, Text, Text, Text> {
     private final Text key = new Text();
-    private final Text count = new Text("1");
+    private final Text position = new Text();
+    private final Text tokenCount = new Text();
 
     @Override
     public void map(Object key, Text value, Context context)
         throws IOException, InterruptedException {
-      var split = (FileSplit) context.getInputSplit();
-      var it = new StringTokenizer(value.toString(), " \t\n\r\f,.:;?!()[]'‘’\"“”—");
-      while (it.hasMoreTokens()) {
-        var filename = split.getPath().getName();
-        var token = it.nextToken().toLowerCase(Locale.ROOT);
-        this.key.set(token + DELIM + filename);
-        context.write(this.key, count);
+      var filename = ((FileSplit) context.getInputSplit()).getPath().getName();
+      var lines = value.toString().split("\n");
+      long tokenCount = 0;
+
+      for (var row = 0; row < lines.length; ++row) {
+        var it = new StringTokenizer(lines[row], " \t\r\f");
+        var col = 0;
+        while (it.hasMoreTokens()) {
+          var token = it.nextToken().toLowerCase(Locale.ROOT);
+          // Suppose all words are separated with a single whitespace character.
+          col += token.length() + 1;
+          ++tokenCount;
+
+          // Yield word positions in each file.
+          this.key.set(token + DELIM + filename);
+          position.set((row + 1) + POS_DELIM + (col + 1));
+          context.write(this.key, position);
+        }
+      }
+
+      // Yield total word count in each file.
+      this.key.set(GLOBAL_SIGN + filename);
+      this.tokenCount.set(String.valueOf(tokenCount));
+      context.write(this.key, this.tokenCount);
+    }
+  }
+
+  public static class Multiplexer extends Partitioner<Text, Text> {
+    @Override
+    public int getPartition(Text key, Text value, int numPartitions)
+        throws IndexOutOfBoundsException {
+      var partitionKey = key.toString();
+      var numLocalPartitions = numPartitions / 2;
+      var numGlobalPartitions = numPartitions - numLocalPartitions;
+      if (partitionKey.startsWith(GLOBAL_SIGN)) {
+        return partitionKey.charAt(GLOBAL_SIGN.length()) % numGlobalPartitions + numLocalPartitions;
+      } else {
+        return partitionKey.charAt(0) % numLocalPartitions;
       }
     }
   }
