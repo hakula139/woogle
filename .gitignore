@@ -3,6 +3,7 @@
 .DS_STORE
 /logs/
 /input/
+/temp/
 /output/
 /target/
 
