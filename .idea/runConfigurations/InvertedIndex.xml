@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="InvertedIndex" type="Application" factoryName="Application">
-    <option name="MAIN_CLASS_NAME" value="xyz.hakula.InvertedIndex" />
+    <option name="MAIN_CLASS_NAME" value="xyz.hakula.Driver" />
     <module name="woogle" />
     <option name="PROGRAM_PARAMETERS" value="input output" />
     <method v="2">
