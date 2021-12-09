@@ -21,10 +21,11 @@ import java.util.StringTokenizer;
 
 public class InvertedIndex extends Configured implements Tool {
   private static final int NUM_REDUCE_TASKS = 16;
-  private static final String GLOBAL_SIGN = "$_";
-  private static final String DELIM = "::";
+  private static final String GLOBAL_SIGN = "$$";
+  private static final String TOKEN_DELIM = ":";
   private static final String POS_DELIM = ";";
-  private static long inputFileCount;
+  private static final String FILE_DELIM = "|";
+  private static long totalFileCount;
 
   public static void main(String[] args) {
     try {
@@ -32,7 +33,7 @@ public class InvertedIndex extends Configured implements Tool {
       var fs = FileSystem.get(config);
 
       var inputPath = new Path(args[0]);
-      inputFileCount = fs.getContentSummary(inputPath).getFileCount();
+      totalFileCount = fs.getContentSummary(inputPath).getFileCount();
 
       var outputPath = new Path(args[1]);
       if (fs.exists(outputPath)) {
@@ -53,7 +54,7 @@ public class InvertedIndex extends Configured implements Tool {
     job.setCombinerClass(TokenCountCombiner.class);
     job.setPartitionerClass(Multiplexer.class);
     job.setNumReduceTasks(NUM_REDUCE_TASKS);
-    job.setReducerClass(TokenCountReducer.class);
+    job.setReducerClass(TokenReducer.class);
 
     job.setOutputKeyClass(Text.class);
     job.setOutputValueClass(Text.class);
@@ -83,12 +84,12 @@ public class InvertedIndex extends Configured implements Tool {
           // Suppose all words are separated with a single whitespace character.
           col += token.length() + 1;
 
-          // Yield word positions in each file.
-          mapKey.set(token + DELIM + filename);
+          // Yield a position of a token in each file.
+          mapKey.set(token + TOKEN_DELIM + filename);
           position.set((row + 1) + "," + (col + 1));
           context.write(mapKey, position);
 
-          // Yield word count in each file.
+          // Yield an occurrence of a token in each file.
           mapKey.set(GLOBAL_SIGN + filename);
           context.write(mapKey, count);
         }
@@ -102,9 +103,9 @@ public class InvertedIndex extends Configured implements Tool {
         throws IndexOutOfBoundsException {
       var partitionKey = key.toString();
       if (partitionKey.startsWith(GLOBAL_SIGN)) {
-        return 0;
+        return numPartitions - 1;
       } else {
-        return partitionKey.charAt(0) % (numPartitions - 1) + 1;
+        return partitionKey.charAt(0) % (numPartitions - 1);
       }
     }
   }
@@ -112,53 +113,58 @@ public class InvertedIndex extends Configured implements Tool {
   public static class TokenCountCombiner extends Reducer<Text, Text, Text, Text> {
     private final Text value = new Text();
 
-    public void combineTokenCounts(Text key, Iterable<Text> values, Context context)
+    // Yield the token count of each file.
+    public void getTokenCountOfFile(Text key, Iterable<Text> values, Context context)
         throws IOException, InterruptedException {
       value.set(String.valueOf(values.spliterator().getExactSizeIfKnown()));
       context.write(key, value);
     }
 
+    // Yield all positions of a token in each file.
     public void combinePositions(Text key, Iterable<Text> values, Context context)
         throws IOException, InterruptedException {
-      var items = key.toString().split(DELIM);
+      var items = key.toString().split(TOKEN_DELIM);
       var token = items[0];
       var filename = items[1];
 
-      var positions = new StringBuilder(filename);
-      var count = values.spliterator().getExactSizeIfKnown();
-      positions.append(DELIM).append(count).append(DELIM);
+      var positions = new StringBuilder();
+      long tokenCount = 0;
       for (var value : values) {
-        positions.append(value).append(POS_DELIM);
+        positions.append(POS_DELIM).append(value);
+        ++tokenCount;
       }
 
       key.set(token);
-      value.set(positions.toString());
+      value.set(filename + TOKEN_DELIM + tokenCount + positions);
       context.write(key, value);
     }
-
 
     @Override
     public void reduce(Text key, Iterable<Text> values, Context context)
         throws IOException, InterruptedException {
       if (key.toString().startsWith(GLOBAL_SIGN)) {
-        combineTokenCounts(key, values, context);
+        getTokenCountOfFile(key, values, context);
       } else {
         combinePositions(key, values, context);
       }
     }
   }
 
-  public static class TokenCountReducer extends Reducer<Text, Text, Text, Text> {
+  public static class TokenReducer extends Reducer<Text, Text, Text, Text> {
     private final Text result = new Text();
 
     @Override
     public void reduce(Text key, Iterable<Text> values, Context context)
         throws IOException, InterruptedException {
-      StringBuilder countList = new StringBuilder();
+      var fileIndex = new StringBuilder();
+      long fileCount = 0;
       for (var value : values) {
-        countList.append("(").append(value).append(") ");
+        fileIndex.append(FILE_DELIM).append(value);
+        ++fileCount;
       }
-      result.set(countList.toString());
+      var idf = Math.log((double) totalFileCount / fileCount);
+
+      result.set(idf + fileIndex.toString());
       context.write(key, result);
     }
   }
