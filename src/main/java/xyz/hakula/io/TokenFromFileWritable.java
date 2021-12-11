@@ -59,6 +59,19 @@ public class TokenFromFileWritable implements WritableComparable<TokenFromFileWr
   }
 
   @Override
+  public int hashCode() {
+    return token.hashCode() ^ filename.hashCode();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o instanceof TokenFromFileWritable) {
+      return compareTo((TokenFromFileWritable) o) == 0;
+    }
+    return false;
+  }
+
+  @Override
   public String toString() {
     return token + DELIM + filename;
   }
