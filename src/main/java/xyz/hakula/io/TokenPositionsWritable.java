@@ -7,24 +7,24 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class TokenPositionArrayWritable implements Writable {
+public class TokenPositionsWritable implements Writable {
   private static final String DELIM = ":";
   private static final String POS_ARRAY_DELIM = ";";
 
   private Text token;
   private LongArrayWritable positions;
 
-  public TokenPositionArrayWritable() {
+  public TokenPositionsWritable() {
     this.token = new Text();
     this.positions = new LongArrayWritable();
   }
 
-  public TokenPositionArrayWritable(Text token, LongArrayWritable positions) {
+  public TokenPositionsWritable(Text token, LongArrayWritable positions) {
     this.token = token;
     this.positions = positions;
   }
 
-  public TokenPositionArrayWritable(String token, Writable[] positions) {
+  public TokenPositionsWritable(String token, Writable[] positions) {
     this.token = new Text(token);
     this.positions = new LongArrayWritable(positions);
   }
