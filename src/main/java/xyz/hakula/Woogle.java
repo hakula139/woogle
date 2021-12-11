@@ -14,7 +14,7 @@ public class Woogle {
     var token = scanner.nextLine().trim();
     var partition = getPartition(token);
     var inputPath = new Path(INPUT_PATH, String.format("part-r-%05d", partition));
-    System.out.println("Result for " + token + ":");
+    System.out.printf("Result of \"%s\" from \"%s\":\n", token, inputPath);
   }
 
   private static int getPartition(String key) {
