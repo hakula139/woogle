@@ -7,6 +7,7 @@ import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
+import xyz.hakula.io.TokenFromFileWritable;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -15,11 +16,8 @@ import java.util.Locale;
 import java.util.StringTokenizer;
 
 public class TokenPosition {
-  private static final String TOKEN_DELIM = "@";
-  private static final String POS_LIST_DELIM = ";";
-
-  public static class Map extends Mapper<LongWritable, Text, Text, LongWritable> {
-    private final Text key = new Text();
+  public static class Map extends Mapper<LongWritable, Text, TokenFromFileWritable, LongWritable> {
+    private final TokenFromFileWritable key = new TokenFromFileWritable();
     private final LongWritable offset = new LongWritable();
 
     // Yield the byte offset of a token in each file.
@@ -32,7 +30,7 @@ public class TokenPosition {
       var it = new StringTokenizer(value.toString(), " \t\r\f");
       while (it.hasMoreTokens()) {
         var token = it.nextToken().toLowerCase(Locale.ROOT);
-        this.key.set(token + TOKEN_DELIM + filename);
+        this.key.set(token, filename);
         this.offset.set(offset);
         context.write(this.key, this.offset);
 
@@ -42,12 +40,13 @@ public class TokenPosition {
     }
   }
 
-  public static class Reduce extends Reducer<Text, LongWritable, Text, ArrayWritable> {
+  public static class Reduce
+      extends Reducer<TokenFromFileWritable, LongWritable, TokenFromFileWritable, ArrayWritable> {
     private final ArrayWritable offsets = new ArrayWritable(LongWritable.class);
 
     // Yield all occurrences of a token in each file.
     @Override
-    public void reduce(Text key, Iterable<LongWritable> values, Context context)
+    public void reduce(TokenFromFileWritable key, Iterable<LongWritable> values, Context context)
         throws IOException, InterruptedException {
       var offsets = new ArrayList<LongWritable>();
       for (var value : values) {
