@@ -10,7 +10,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 public class TermFreqWritable implements Writable {
-  private static final String DELIM = " ";
+  private static final String DELIM = ":";
   private static final String POS_ARRAY_DELIM = ";";
 
   private Text filename;
@@ -47,13 +47,6 @@ public class TermFreqWritable implements Writable {
     this.filename = filename;
     this.tokenCount = tokenCount;
     this.termFreq = termFreq;
-    this.positions = positions;
-  }
-
-  public void set(String filename, long tokenCount, double termFreq, LongArrayWritable positions) {
-    this.filename.set(filename);
-    this.tokenCount.set(tokenCount);
-    this.termFreq.set(termFreq);
     this.positions = positions;
   }
 

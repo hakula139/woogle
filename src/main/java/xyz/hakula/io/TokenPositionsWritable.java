@@ -9,7 +9,6 @@ import java.io.IOException;
 
 public class TokenPositionsWritable implements Writable {
   private static final String DELIM = ":";
-  private static final String POS_ARRAY_DELIM = ";";
 
   private Text token;
   private LongArrayWritable positions;
@@ -31,11 +30,6 @@ public class TokenPositionsWritable implements Writable {
 
   public void set(Text token, LongArrayWritable positions) {
     this.token = token;
-    this.positions = positions;
-  }
-
-  public void set(String token, LongArrayWritable positions) {
-    this.token.set(token);
     this.positions = positions;
   }
 
@@ -66,6 +60,6 @@ public class TokenPositionsWritable implements Writable {
 
   @Override
   public String toString() {
-    return token.toString() + DELIM + String.join(POS_ARRAY_DELIM, positions.toStrings());
+    return token + DELIM + positions;
   }
 }

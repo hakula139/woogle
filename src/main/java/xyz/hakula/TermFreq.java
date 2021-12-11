@@ -1,6 +1,7 @@
 package xyz.hakula;
 
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -23,7 +24,7 @@ public class TermFreq {
     public void map(TokenFromFileWritable key, LongArrayWritable value, Context context)
         throws IOException, InterruptedException {
       this.key.set(key.getFilename());
-      this.value.set(key.getToken(), value);
+      this.value.set(key.getToken(), (Writable[]) value.toArray());
       context.write(this.key, this.value);
     }
   }
@@ -33,7 +34,8 @@ public class TermFreq {
     private final TermFreqWritable value = new TermFreqWritable();
 
     // Yield the Term Frequency (TF) of each token in each file.
-    // (<filename>, (<token>, [<offset>])) -> (<token>, <filename>:<tf>:[<offsets>])
+    // (<filename>, (<token>, [<offset>]))
+    // -> (<token>, <filename>:<tokenCount>:<tf>:[<offsets>])
     @Override
     public void reduce(Text key, Iterable<TokenPositionsWritable> values, Context context)
         throws IOException, InterruptedException {
