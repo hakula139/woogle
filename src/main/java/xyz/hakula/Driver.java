@@ -13,10 +13,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-import xyz.hakula.io.LongArrayWritable;
-import xyz.hakula.io.TermFreqWritable;
-import xyz.hakula.io.TokenFromFileWritable;
-import xyz.hakula.io.TokenPositionArrayWritable;
+import xyz.hakula.io.*;
 
 public class Driver extends Configured implements Tool {
   private static final int NUM_REDUCE_TASKS = 16;
@@ -62,7 +59,7 @@ public class Driver extends Configured implements Tool {
     job2.setReducerClass(TermFreq.Reduce.class);
     job2.setNumReduceTasks(NUM_REDUCE_TASKS);
     job2.setOutputKeyClass(Text.class);
-    job2.setOutputValueClass(TermFreqWritable.class);
+    job2.setOutputValueClass(TermFreqArrayWritable.class);
     FileInputFormat.addInputPath(job2, tempPath);
     FileOutputFormat.setOutputPath(job2, outputPath);
     if (!job2.waitForCompletion(true)) System.exit(1);

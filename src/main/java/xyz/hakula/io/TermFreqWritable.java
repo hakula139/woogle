@@ -60,6 +60,10 @@ public class TermFreqWritable implements Writable {
     return termFreq.get();
   }
 
+  public void setTermFreq(double termFreq) {
+    this.termFreq.set(termFreq);
+  }
+
   public Writable[] getPositions() {
     return positions.get();
   }
