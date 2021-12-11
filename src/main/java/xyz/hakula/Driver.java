@@ -22,8 +22,6 @@ public class Driver extends Configured implements Tool {
   private static final int NUM_REDUCE_TASKS = 16;
   private static final String TEMP_PATH = "temp";
 
-  private static long totalFileCount;
-
   public static void main(String[] args) throws Exception {
     var config = new Configuration();
     System.exit(ToolRunner.run(config, new Driver(), args));
@@ -37,7 +35,7 @@ public class Driver extends Configured implements Tool {
     var outputPath = new Path(args[1]);
 
     var fs = FileSystem.get(getConf());
-    totalFileCount = fs.getContentSummary(inputPath).getFileCount();
+    var totalFileCount = fs.getContentSummary(inputPath).getFileCount();
     if (fs.exists(tempPath)) fs.delete(tempPath, true);
     if (fs.exists(outputPath)) fs.delete(outputPath, true);
     if (totalFileCount == 0) return 0;
@@ -62,8 +60,8 @@ public class Driver extends Configured implements Tool {
     job2.setMapperClass(TermFreq.Map.class);
     job2.setMapOutputKeyClass(Text.class);
     job2.setMapOutputValueClass(TokenPositionsWritable.class);
-    job2.setReducerClass(TermFreq.Combine.class);
-    job2.setNumReduceTasks(NUM_REDUCE_TASKS);
+    job2.setReducerClass(TermFreq.Reduce.class);
+    job2.setNumReduceTasks((int) totalFileCount);
     job2.setOutputKeyClass(Text.class);
     job2.setOutputValueClass(TermFreqArrayWritable.class);
     FileInputFormat.addInputPath(job2, tempPath1);

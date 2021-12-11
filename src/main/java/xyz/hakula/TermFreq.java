@@ -1,6 +1,7 @@
 package xyz.hakula;
 
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import xyz.hakula.io.LongArrayWritable;
@@ -27,7 +28,7 @@ public class TermFreq {
     }
   }
 
-  public static class Combine
+  public static class Reduce
       extends Reducer<Text, TokenPositionsWritable, Text, TermFreqWritable> {
     private final Text key = new Text();
     private final TermFreqWritable value = new TermFreqWritable();
@@ -40,7 +41,7 @@ public class TermFreq {
       var tokenPositionsList = new ArrayList<TokenPositionsWritable>();
       long tokenCount = 0;
       for (var value : values) {
-        tokenPositionsList.add(value);
+        tokenPositionsList.add(WritableUtils.clone(value, context.getConfiguration()));
         tokenCount += value.getPositions().length;
       }
 
@@ -48,8 +49,7 @@ public class TermFreq {
       for (var tokenPositions : tokenPositionsList) {
         var token = tokenPositions.getToken();
         var positions = tokenPositions.getPositions();
-        var termFreq = positions.length / tokenCount;
-
+        var termFreq = (double) positions.length / tokenCount;
         this.key.set(token);
         this.value.set(filename, termFreq, positions);
         context.write(this.key, this.value);
