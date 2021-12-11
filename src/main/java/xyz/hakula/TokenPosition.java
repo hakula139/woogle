@@ -1,12 +1,12 @@
 package xyz.hakula;
 
-import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
+import xyz.hakula.io.LongArrayWritable;
 import xyz.hakula.io.TokenFromFileWritable;
 
 import java.io.IOException;
@@ -40,9 +40,9 @@ public class TokenPosition {
     }
   }
 
-  public static class Reduce
-      extends Reducer<TokenFromFileWritable, LongWritable, TokenFromFileWritable, ArrayWritable> {
-    private final ArrayWritable offsets = new ArrayWritable(LongWritable.class);
+  public static class Reduce extends
+      Reducer<TokenFromFileWritable, LongWritable, TokenFromFileWritable, LongArrayWritable> {
+    private final LongArrayWritable offsets = new LongArrayWritable();
 
     // Yield all occurrences of a token in each file.
     @Override

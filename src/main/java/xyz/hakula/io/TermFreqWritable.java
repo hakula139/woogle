@@ -1,6 +1,5 @@
 package xyz.hakula.io;
 
-import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -15,15 +14,15 @@ public class TermFreqWritable implements Writable {
 
   private Text filename;
   private DoubleWritable termFreq;
-  private ArrayWritable positions;
+  private LongArrayWritable positions;
 
   public TermFreqWritable() {
     this.filename = new Text();
     this.termFreq = new DoubleWritable();
-    this.positions = new ArrayWritable(Writable.class);
+    this.positions = new LongArrayWritable();
   }
 
-  public TermFreqWritable(Text filename, DoubleWritable termFreq, ArrayWritable positions) {
+  public TermFreqWritable(Text filename, DoubleWritable termFreq, LongArrayWritable positions) {
     this.filename = filename;
     this.termFreq = termFreq;
     this.positions = positions;
@@ -32,16 +31,16 @@ public class TermFreqWritable implements Writable {
   public TermFreqWritable(String filename, double termFreq, Writable[] positions) {
     this.filename = new Text(filename);
     this.termFreq = new DoubleWritable(termFreq);
-    this.positions = new ArrayWritable(Writable.class, positions);
+    this.positions = new LongArrayWritable(positions);
   }
 
-  public void set(Text filename, DoubleWritable termFreq, ArrayWritable positions) {
+  public void set(Text filename, DoubleWritable termFreq, LongArrayWritable positions) {
     this.filename = filename;
     this.termFreq = termFreq;
     this.positions = positions;
   }
 
-  public void set(String filename, double termFreq, ArrayWritable positions) {
+  public void set(String filename, double termFreq, LongArrayWritable positions) {
     this.filename.set(filename);
     this.termFreq.set(termFreq);
     this.positions = positions;
@@ -66,17 +65,17 @@ public class TermFreqWritable implements Writable {
   }
 
   @Override
-  public void readFields(DataInput in) throws IOException {
-    filename.readFields(in);
-    termFreq.readFields(in);
-    positions.readFields(in);
-  }
-
-  @Override
   public void write(DataOutput out) throws IOException {
     filename.write(out);
     termFreq.write(out);
     positions.write(out);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    filename.readFields(in);
+    termFreq.readFields(in);
+    positions.readFields(in);
   }
 
   @Override

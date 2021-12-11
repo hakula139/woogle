@@ -1,6 +1,6 @@
 package xyz.hakula.io;
 
-import org.apache.hadoop.io.ArrayWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 
@@ -13,29 +13,29 @@ public class TokenPositionArrayWritable implements Writable {
   private static final String POS_ARRAY_DELIM = ";";
 
   private Text token;
-  private ArrayWritable positions;
+  private LongArrayWritable positions;
 
   public TokenPositionArrayWritable() {
     this.token = new Text();
-    this.positions = new ArrayWritable(Writable.class);
+    this.positions = new LongArrayWritable();
   }
 
-  public TokenPositionArrayWritable(Text token, ArrayWritable positions) {
+  public TokenPositionArrayWritable(Text token, LongArrayWritable positions) {
     this.token = token;
     this.positions = positions;
   }
 
   public TokenPositionArrayWritable(String token, Writable[] positions) {
     this.token = new Text(token);
-    this.positions = new ArrayWritable(Writable.class, positions);
+    this.positions = new LongArrayWritable(positions);
   }
 
-  public void set(Text token, ArrayWritable positions) {
+  public void set(Text token, LongArrayWritable positions) {
     this.token = token;
     this.positions = positions;
   }
 
-  public void set(String token, ArrayWritable positions) {
+  public void set(String token, LongArrayWritable positions) {
     this.token.set(token);
     this.positions = positions;
   }
@@ -54,15 +54,15 @@ public class TokenPositionArrayWritable implements Writable {
   }
 
   @Override
-  public void readFields(DataInput in) throws IOException {
-    token.readFields(in);
-    positions.readFields(in);
-  }
-
-  @Override
   public void write(DataOutput out) throws IOException {
     token.write(out);
     positions.write(out);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    token.readFields(in);
+    positions.readFields(in);
   }
 
   @Override

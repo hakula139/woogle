@@ -1,13 +1,13 @@
 package xyz.hakula.io;
 
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class TokenFromFileWritable implements Writable {
+public class TokenFromFileWritable implements WritableComparable<TokenFromFileWritable> {
   private static final String DELIM = "@";
 
   private Text token;
@@ -47,19 +47,26 @@ public class TokenFromFileWritable implements Writable {
   }
 
   @Override
-  public void readFields(DataInput in) throws IOException {
-    token.readFields(in);
-    filename.readFields(in);
-  }
-
-  @Override
   public void write(DataOutput out) throws IOException {
     token.write(out);
     filename.write(out);
   }
 
   @Override
+  public void readFields(DataInput in) throws IOException {
+    token.readFields(in);
+    filename.readFields(in);
+  }
+
+  @Override
   public String toString() {
     return token + DELIM + filename;
+  }
+
+  @Override
+  public int compareTo(TokenFromFileWritable o) {
+    var tokenRelation = token.compareTo(o.token);
+    if (tokenRelation != 0) return tokenRelation;
+    return filename.compareTo(o.filename);
   }
 }

@@ -1,9 +1,9 @@
 package xyz.hakula;
 
-import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
+import xyz.hakula.io.LongArrayWritable;
 import xyz.hakula.io.TermFreqWritable;
 import xyz.hakula.io.TokenFromFileWritable;
 import xyz.hakula.io.TokenPositionArrayWritable;
@@ -12,13 +12,13 @@ import java.io.IOException;
 
 public class TermFreq {
   public static class Map
-      extends Mapper<TokenFromFileWritable, ArrayWritable, Text, TokenPositionArrayWritable> {
+      extends Mapper<TokenFromFileWritable, LongArrayWritable, Text, TokenPositionArrayWritable> {
     private final Text key = new Text();
     private final TokenPositionArrayWritable value = new TokenPositionArrayWritable();
 
     // (<token>@<filename>, <offsets>) -> (<filename>, (<token>, <offsets>))
     @Override
-    public void map(TokenFromFileWritable key, ArrayWritable value, Context context)
+    public void map(TokenFromFileWritable key, LongArrayWritable value, Context context)
         throws IOException, InterruptedException {
       this.key.set(key.getFilename());
       this.value.set(key.getToken(), value);
