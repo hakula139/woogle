@@ -102,7 +102,6 @@
       <option name="ALIGN_MULTILINE_ASSIGNMENT" value="true" />
       <option name="ALIGN_MULTILINE_TERNARY_OPERATION" value="true" />
       <option name="ALIGN_MULTILINE_THROWS_LIST" value="true" />
-      <option name="ALIGN_MULTILINE_EXTENDS_LIST" value="true" />
       <option name="ALIGN_MULTILINE_PARENTHESIZED_EXPRESSION" value="true" />
       <option name="ALIGN_MULTILINE_ARRAY_INITIALIZER_EXPRESSION" value="true" />
       <option name="SPACE_WITHIN_BRACES" value="true" />
@@ -120,7 +119,6 @@
       <option name="EXTENDS_KEYWORD_WRAP" value="1" />
       <option name="THROWS_KEYWORD_WRAP" value="1" />
       <option name="METHOD_CALL_CHAIN_WRAP" value="5" />
-      <option name="WRAP_FIRST_METHOD_IN_CALL_CHAIN" value="true" />
       <option name="BINARY_OPERATION_WRAP" value="1" />
       <option name="TERNARY_OPERATION_WRAP" value="1" />
       <option name="TERNARY_OPERATION_SIGNS_ON_NEXT_LINE" value="true" />
