@@ -14,6 +14,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import xyz.hakula.io.TermFreqWritable;
 import xyz.hakula.io.TokenFromFileWritable;
 import xyz.hakula.io.TokenPositionArrayWritable;
 
@@ -53,15 +54,15 @@ public class Driver extends Configured implements Tool {
     if (!job1.waitForCompletion(true)) System.exit(1);
 
     var job2 = Job.getInstance(getConf(), "inverted index");
-    job2.setJarByClass(InvertedIndex.class);
+    job2.setJarByClass(TermFreq.class);
     job2.setInputFormatClass(SequenceFileInputFormat.class);
-    job2.setMapperClass(InvertedIndex.Map.class);
+    job2.setMapperClass(TermFreq.Map.class);
     job2.setMapOutputKeyClass(Text.class);
     job2.setMapOutputValueClass(TokenPositionArrayWritable.class);
-    job2.setReducerClass(InvertedIndex.Reduce.class);
+    job2.setReducerClass(TermFreq.Reduce.class);
     job2.setNumReduceTasks(NUM_REDUCE_TASKS);
     job2.setOutputKeyClass(Text.class);
-    job2.setOutputValueClass(ArrayWritable.class);
+    job2.setOutputValueClass(TermFreqWritable.class);
     FileInputFormat.addInputPath(job2, tempPath);
     FileOutputFormat.setOutputPath(job2, outputPath);
     if (!job2.waitForCompletion(true)) System.exit(1);
