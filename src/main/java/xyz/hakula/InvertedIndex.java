@@ -39,7 +39,7 @@ public class InvertedIndex {
       }
 
       var totalFileCount = conf.getLong("totalFileCount", 1);
-      var inverseDocumentFreq = (double) fileCount / totalFileCount;
+      var inverseDocumentFreq = Math.log((double) totalFileCount / fileCount);
       this.value.set(inverseDocumentFreq, termFreqList.toArray(TermFreqWritable[]::new));
       context.write(key, this.value);
     }
