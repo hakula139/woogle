@@ -1,6 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="InvertedIndexJar" type="JarApplication" show_console_on_std_err="true"
-                 show_console_on_std_out="true">
+  <configuration default="false" name="woogle_jar" type="JarApplication" show_console_on_std_err="true" show_console_on_std_out="true">
     <option name="JAR_PATH" value="$PROJECT_DIR$/jar/woogle.jar" />
     <option name="PROGRAM_PARAMETERS" value="input output" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
