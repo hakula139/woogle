@@ -4,6 +4,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -41,7 +42,7 @@ public class Driver extends Configured implements Tool {
     job1.setReducerClass(TokenPosition.Reduce.class);
     job1.setNumReduceTasks(NUM_REDUCE_TASKS);
     job1.setOutputKeyClass(Text.class);
-    job1.setOutputValueClass(Text.class);
+    job1.setOutputValueClass(ArrayWritable.class);
     FileInputFormat.addInputPath(job1, inputPath);
     FileOutputFormat.setOutputPath(job1, tempPath);
     if (!job1.waitForCompletion(true)) System.exit(1);
