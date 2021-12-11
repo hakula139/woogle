@@ -28,8 +28,7 @@ public class TermFreq {
     }
   }
 
-  public static class Reduce
-      extends Reducer<Text, TokenPositionsWritable, Text, TermFreqWritable> {
+  public static class Reduce extends Reducer<Text, TokenPositionsWritable, Text, TermFreqWritable> {
     private final Text key = new Text();
     private final TermFreqWritable value = new TermFreqWritable();
 
@@ -39,19 +38,20 @@ public class TermFreq {
     public void reduce(Text key, Iterable<TokenPositionsWritable> values, Context context)
         throws IOException, InterruptedException {
       var tokenPositionsList = new ArrayList<TokenPositionsWritable>();
-      long tokenCount = 0;
+      long totalTokenCount = 0;
       for (var value : values) {
         tokenPositionsList.add(WritableUtils.clone(value, context.getConfiguration()));
-        tokenCount += value.getPositions().length;
+        totalTokenCount += value.getPositions().length;
       }
 
       var filename = key.toString();
       for (var tokenPositions : tokenPositionsList) {
         var token = tokenPositions.getToken();
         var positions = tokenPositions.getPositions();
-        var termFreq = (double) positions.length / tokenCount;
+        var tokenCount = positions.length;
+        var termFreq = (double) tokenCount / totalTokenCount;
         this.key.set(token);
-        this.value.set(filename, termFreq, positions);
+        this.value.set(filename, tokenCount, termFreq, positions);
         context.write(this.key, this.value);
       }
     }
