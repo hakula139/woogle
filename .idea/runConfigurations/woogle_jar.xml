@@ -1,0 +1,14 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="woogle_jar" type="JarApplication">
+    <option name="JAR_PATH" value="$PROJECT_DIR$/jar/woogle.jar" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
+    <option name="ALTERNATIVE_JRE_PATH" value="17" />
+    <module name="woogle" />
+    <method v="2">
+      <option name="BuildArtifacts" enabled="true">
+        <artifact name="woogle:jar" />
+      </option>
+    </method>
+  </configuration>
+</component>
