@@ -40,11 +40,11 @@ public class TokenCount {
     @Override
     public void reduce(Text key, Iterable<TokenPositionsWritable> values, Context context)
         throws IOException, InterruptedException {
-      var filename = key.toString();
+      String filename = key.toString();
       long totalTokenCount = 0;
-      for (var value : values) {
-        var positions = value.getPositions();
-        var tokenCount = positions.length;
+      for (TokenPositionsWritable value : values) {
+        Writable[] positions = value.getPositions();
+        long tokenCount = positions.length;
         this.key.set(value.getToken());
         // The Term Frequency (TF) will be calculated in next job, and hence left blank here.
         this.value.set(filename, tokenCount, 0, positions);

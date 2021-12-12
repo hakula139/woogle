@@ -16,7 +16,7 @@ public class InvertedIndex {
     @Override
     public void map(Text key, TermFreqWritable value, Context context)
         throws IOException, InterruptedException {
-      var totalTokenCount = Driver.fileTokenCount.get(value.getFilename());
+      long totalTokenCount = Driver.fileTokenCount.get(value.getFilename());
       value.setTermFreq((double) value.getTokenCount() / totalTokenCount);
       context.write(key, value);
     }
@@ -32,16 +32,16 @@ public class InvertedIndex {
     @Override
     public void reduce(Text key, Iterable<TermFreqWritable> values, Context context)
         throws IOException, InterruptedException {
-      var conf = context.getConfiguration();
+      Configuration conf = context.getConfiguration();
 
-      var termFreqList = new ArrayList<TermFreqWritable>();
+      ArrayList<TermFreqWritable> termFreqList = new ArrayList<>();
       long fileCount = 0;
-      for (var value : values) {
+      for (TermFreqWritable value : values) {
         termFreqList.add(WritableUtils.clone(value, conf));
         ++fileCount;
       }
 
-      var inverseDocumentFreq = Math.log((double) Driver.totalFileCount / fileCount) / Math.log(2);
+      double inverseDocumentFreq = Math.log((double) Driver.totalFileCount / fileCount) / Math.log(2);
       this.value.set(inverseDocumentFreq, termFreqList.toArray(TermFreqWritable[]::new));
       context.write(key, this.value);
     }

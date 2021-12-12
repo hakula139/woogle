@@ -26,19 +26,19 @@ public class Driver extends Configured implements Tool {
   public static long totalFileCount = 0;
 
   public static void main(String[] args) throws Exception {
-    var conf = new Configuration();
+    Configuration conf = new Configuration();
     System.exit(ToolRunner.run(conf, new Driver(), args));
   }
 
   public int run(String[] args) throws Exception {
-    var inputPath = new Path(args[0]);
-    var outputPath = new Path(args[1]);
-    var tempPath = new Path(args[2]);
-    var tempPath1 = new Path(tempPath, "output_job1");
-    var tempPath2 = new Path(tempPath, "output_job2");
+    Path inputPath = new Path(args[0]);
+    Path outputPath = new Path(args[1]);
+    Path tempPath = new Path(args[2]);
+    Path tempPath1 = new Path(tempPath, "output_job1");
+    Path tempPath2 = new Path(tempPath, "output_job2");
 
-    var conf = getConf();
-    try (var fs = FileSystem.get(conf)) {
+    Configuration conf = getConf();
+    try (FileSystem fs = FileSystem.get(conf)) {
       totalFileCount = fs.getContentSummary(inputPath).getFileCount();
       if (totalFileCount == 0) return 0;
 
@@ -51,7 +51,7 @@ public class Driver extends Configured implements Tool {
 
   private boolean runJob1(Path inputPath, Path outputPath)
       throws IOException, InterruptedException, ClassNotFoundException {
-    var job1 = Job.getInstance(getConf(), "token position");
+    Job job1 = Job.getInstance(getConf(), "token position");
     job1.setJarByClass(TokenPosition.class);
 
     job1.setMapperClass(TokenPosition.Map.class);
@@ -72,7 +72,7 @@ public class Driver extends Configured implements Tool {
 
   private boolean runJob2(Path inputPath, Path outputPath, FileSystem fs)
       throws IOException, InterruptedException, ClassNotFoundException {
-    var job2 = Job.getInstance(getConf(), "token count");
+    Job job2 = Job.getInstance(getConf(), "token count");
     job2.setJarByClass(TokenCount.class);
 
     job2.setInputFormatClass(SequenceFileInputFormat.class);
@@ -89,14 +89,14 @@ public class Driver extends Configured implements Tool {
     FileInputFormat.addInputPath(job2, inputPath);
     FileOutputFormat.setOutputPath(job2, outputPath);
 
-    var ret = job2.waitForCompletion(true);
+    boolean ret = job2.waitForCompletion(true);
     dumpToFile(new Path(outputPath.getParent(), FILE_TOKEN_COUNT_FILENAME), fs);
     return ret;
   }
 
   private boolean runJob3(Path inputPath, Path outputPath, FileSystem fs)
       throws IOException, InterruptedException, ClassNotFoundException {
-    var job3 = Job.getInstance(getConf(), "inverted index");
+    Job job3 = Job.getInstance(getConf(), "inverted index");
     job3.setJarByClass(InvertedIndex.class);
 
     job3.setInputFormatClass(SequenceFileInputFormat.class);
@@ -117,20 +117,20 @@ public class Driver extends Configured implements Tool {
   }
 
   protected void dumpToFile(Path path, FileSystem fs) throws IOException {
-    try (var writer = new BufferedWriter(new OutputStreamWriter(fs.create(path, true)))) {
-      for (var entry : fileTokenCount.entrySet()) {
+    try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fs.create(path, true)))) {
+      for (Entry entry : fileTokenCount.entrySet()) {
         writer.write(entry.getKey() + "\t" + entry.getValue() + "\n");
       }
     }
   }
 
   protected void loadFromFile(Path path, FileSystem fs) throws IOException {
-    try (var reader = new BufferedReader(new InputStreamReader(fs.open(path)))) {
-      var line = "";
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(path)))) {
+      String line;
       while ((line = reader.readLine()) != null) {
-        var lineSplit = line.split("\t");
-        var filename = lineSplit[0];
-        var totalTokenCount = Long.valueOf(lineSplit[1]);
+        String[] lineSplit = line.split("\t");
+        String filename = lineSplit[0];
+        long totalTokenCount = Long.valueOf(lineSplit[1]);
         fileTokenCount.put(filename, totalTokenCount);
       }
     }
