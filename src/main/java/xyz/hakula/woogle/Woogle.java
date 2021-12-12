@@ -10,6 +10,7 @@ import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 import xyz.hakula.index.Driver;
 import xyz.hakula.woogle.model.SearchResult;
+import xyz.hakula.woogle.model.TermFreq;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -25,36 +26,36 @@ public class Woogle extends Configured implements Tool {
   private static final Logger log = Logger.getLogger(Woogle.class.getName());
 
   public static void main(String[] args) throws Exception {
-    var conf = new Configuration();
+    Configuration conf = new Configuration();
     System.exit(ToolRunner.run(conf, new Woogle(), args));
   }
 
   public int run(String[] args) throws Exception {
-    var scanner = new Scanner(System.in);
+    Scanner scanner = new Scanner(System.in);
     System.out.print("Please input a keyword:\n> ");
-    var key = scanner.nextLine().trim().toLowerCase(Locale.ROOT);
-    var partition = getPartition(key);
-    var inputPath = new Path(INPUT_PATH, String.format("part-r-%05d", partition));
+    String key = scanner.nextLine().trim().toLowerCase(Locale.ROOT);
+    int partition = getPartition(key);
+    Path inputPath = new Path(INPUT_PATH, String.format("part-r-%05d", partition));
 
-    var conf = getConf();
-    var fs = FileSystem.get(conf);
-    try (var reader = new BufferedReader(new InputStreamReader(fs.open(inputPath)))) {
+    Configuration conf = getConf();
+    FileSystem fs = FileSystem.get(conf);
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(inputPath)))) {
       search(reader, key);
     }
     return 0;
   }
 
   protected int getPartition(String key) {
-    var textKey = new Text(key);
+    Text textKey = new Text(key);
     return (textKey.hashCode() & Integer.MAX_VALUE) % Driver.NUM_REDUCE_TASKS;
   }
 
   protected void search(BufferedReader reader, String key) throws IOException {
     SearchResult result = null;
-    var line = "";
+    String line;
     while ((line = reader.readLine()) != null) {
-      var lineSplit = line.split("\t");
-      var token = lineSplit[0];
+      String[] lineSplit = line.split("\t");
+      String token = lineSplit[0];
       if (!token.contains(key)) continue;
 
       try {
@@ -76,13 +77,13 @@ public class Woogle extends Configured implements Tool {
       return;
     }
 
-    var idf = result.inverseDocumentFreq();
+    double idf = result.inverseDocumentFreq();
     System.out.printf("%s: IDF = %6e | found in files:\n", token, idf);
 
-    for (var termFreq : result.termFreqs()) {
-      var filename = termFreq.filename();
-      var tokenCount = termFreq.tokenCount();
-      var tf = termFreq.termFreq();
+    for (TermFreq termFreq : result.termFreqs()) {
+      String filename = termFreq.filename();
+      long tokenCount = termFreq.tokenCount();
+      double tf = termFreq.termFreq();
       System.out.printf(
           "  %s: TF = %6e (%d times) | TF-IDF = %6e | positions:",
           filename,
@@ -91,7 +92,7 @@ public class Woogle extends Configured implements Tool {
           tf * idf
       );
 
-      for (var position : termFreq.positions()) {
+      for (long position : termFreq.positions()) {
         System.out.print(" ");
         System.out.print(position);
       }

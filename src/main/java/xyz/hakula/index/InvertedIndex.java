@@ -1,5 +1,6 @@
 package xyz.hakula.index;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -29,18 +30,18 @@ public class InvertedIndex {
     @Override
     public void reduce(Text key, Iterable<TermFreqWritable> values, Context context)
         throws IOException, InterruptedException {
-      var conf = context.getConfiguration();
+      Configuration conf = context.getConfiguration();
 
-      var termFreqList = new ArrayList<TermFreqWritable>();
+      ArrayList<TermFreqWritable> termFreqList = new ArrayList<>();
       long fileCount = 0;
-      for (var value : values) {
+      for (TermFreqWritable value : values) {
         termFreqList.add(WritableUtils.clone(value, conf));
         ++fileCount;
       }
 
-      var totalFileCount = conf.getLong("totalFileCount", 1);
-      var inverseDocumentFreq = Math.log((double) totalFileCount / fileCount);
-      this.value.set(inverseDocumentFreq, termFreqList.toArray(TermFreqWritable[]::new));
+      long totalFileCount = conf.getLong("totalFileCount", 1);
+      double inverseDocumentFreq = Math.log((double) totalFileCount / fileCount);
+      this.value.set(inverseDocumentFreq, termFreqList.toArray(new TermFreqWritable[0]));
       context.write(key, this.value);
     }
   }
