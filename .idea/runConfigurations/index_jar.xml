@@ -6,6 +6,10 @@
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
     <option name="ALTERNATIVE_JRE_PATH" value="17" />
     <module name="woogle" />
-    <method v="2" />
+    <method v="2">
+      <option name="BuildArtifacts" enabled="true">
+        <artifact name="index:jar" />
+      </option>
+    </method>
   </configuration>
 </component>
