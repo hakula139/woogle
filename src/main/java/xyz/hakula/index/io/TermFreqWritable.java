@@ -61,6 +61,10 @@ public class TermFreqWritable implements Writable {
     return filename.toString();
   }
 
+  public long getTokenCount() {
+    return tokenCount.get();
+  }
+
   public double getTermFreq() {
     return termFreq.get();
   }

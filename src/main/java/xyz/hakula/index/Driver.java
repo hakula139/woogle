@@ -22,8 +22,8 @@ public class Driver extends Configured implements Tool {
   private static final String TEMP_PATH = "temp";
 
   public static void main(String[] args) throws Exception {
-    var config = new Configuration();
-    System.exit(ToolRunner.run(config, new Driver(), args));
+    var conf = new Configuration();
+    System.exit(ToolRunner.run(conf, new Driver(), args));
   }
 
   public int run(String[] args) throws Exception {
