@@ -78,7 +78,7 @@ public class TokenFromFileWritable implements WritableComparable<TokenFromFileWr
 
   @Override
   public int compareTo(TokenFromFileWritable o) {
-    var tokenRelation = token.compareTo(o.token);
+    int tokenRelation = token.compareTo(o.token);
     if (tokenRelation != 0) return tokenRelation;
     return filename.compareTo(o.filename);
   }
