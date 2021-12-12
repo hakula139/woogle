@@ -76,13 +76,13 @@ public class Woogle extends Configured implements Tool {
       return;
     }
 
-    var idf = result.getInverseDocumentFreq();
+    var idf = result.inverseDocumentFreq();
     System.out.printf("%s: IDF = %6e | found in files:\n", token, idf);
 
-    for (var termFreq : result.getTermFreqs()) {
-      var filename = termFreq.getFilename();
-      var tokenCount = termFreq.getTokenCount();
-      var tf = termFreq.getTermFreq();
+    for (var termFreq : result.termFreqs()) {
+      var filename = termFreq.filename();
+      var tokenCount = termFreq.tokenCount();
+      var tf = termFreq.termFreq();
       System.out.printf(
           "  %s: TF = %6e (%d times) | TF-IDF = %6e | positions:",
           filename,
@@ -91,7 +91,7 @@ public class Woogle extends Configured implements Tool {
           tf * idf
       );
 
-      for (var position : termFreq.getPositions()) {
+      for (var position : termFreq.positions()) {
         System.out.print(" ");
         System.out.print(position);
       }
