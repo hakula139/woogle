@@ -1,4 +1,4 @@
-package xyz.hakula;
+package xyz.hakula.index;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -13,7 +13,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-import xyz.hakula.io.*;
+import xyz.hakula.index.io.*;
 
 import java.io.IOException;
 

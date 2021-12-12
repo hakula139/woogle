@@ -1,4 +1,4 @@
-package xyz.hakula.io;
+package xyz.hakula.index.io;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;

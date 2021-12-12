@@ -1,14 +1,14 @@
-package xyz.hakula;
+package xyz.hakula.index;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
-import xyz.hakula.io.LongArrayWritable;
-import xyz.hakula.io.TermFreqWritable;
-import xyz.hakula.io.TokenFromFileWritable;
-import xyz.hakula.io.TokenPositionsWritable;
+import xyz.hakula.index.io.LongArrayWritable;
+import xyz.hakula.index.io.TermFreqWritable;
+import xyz.hakula.index.io.TokenFromFileWritable;
+import xyz.hakula.index.io.TokenPositionsWritable;
 
 import java.io.IOException;
 import java.util.ArrayList;

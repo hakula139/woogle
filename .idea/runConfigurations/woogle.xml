@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="woogle" type="Application" factoryName="Application">
-    <option name="MAIN_CLASS_NAME" value="xyz.hakula.Woogle" />
+    <option name="MAIN_CLASS_NAME" value="xyz.hakula.woogle.Woogle" />
     <module name="woogle" />
     <method v="2">
       <option name="Make" enabled="true" />

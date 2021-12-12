@@ -1,7 +1,8 @@
-package xyz.hakula;
+package xyz.hakula.woogle;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
+import xyz.hakula.index.Driver;
 
 import java.util.Scanner;
 
@@ -17,7 +18,7 @@ public class Woogle {
     System.out.printf("Result of \"%s\" from \"%s\":\n", token, inputPath);
   }
 
-  private static int getPartition(String key) {
+  protected static int getPartition(String key) {
     var textKey = new Text(key);
     return (textKey.hashCode() & Integer.MAX_VALUE) % Driver.NUM_REDUCE_TASKS;
   }

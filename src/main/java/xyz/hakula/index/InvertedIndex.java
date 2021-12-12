@@ -1,11 +1,11 @@
-package xyz.hakula;
+package xyz.hakula.index;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
-import xyz.hakula.io.InvertedIndexWritable;
-import xyz.hakula.io.TermFreqWritable;
+import xyz.hakula.index.io.InvertedIndexWritable;
+import xyz.hakula.index.io.TermFreqWritable;
 
 import java.io.IOException;
 import java.util.ArrayList;
