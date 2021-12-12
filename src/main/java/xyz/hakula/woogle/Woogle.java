@@ -14,12 +14,13 @@ import xyz.hakula.woogle.model.SearchResult;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Locale;
 import java.util.Scanner;
 
 public class Woogle extends Configured implements Tool {
   private static final String INPUT_PATH = "output";
-  private static final String RED = "\\e[0;31m";
-  private static final String RESET = "\\e[0;0m";
+  private static final String ANSI_RED = "\033[1;31m";
+  private static final String ANSI_RESET = "\033[0m";
 
   private static final Logger log = Logger.getLogger(Woogle.class.getName());
 
@@ -31,7 +32,7 @@ public class Woogle extends Configured implements Tool {
   public int run(String[] args) throws Exception {
     var scanner = new Scanner(System.in);
     System.out.print("Please input a keyword:\n> ");
-    var key = scanner.nextLine().trim();
+    var key = scanner.nextLine().trim().toLowerCase(Locale.ROOT);
     var partition = getPartition(key);
     var inputPath = new Path(INPUT_PATH, String.format("part-r-%05d", partition));
 
@@ -63,7 +64,7 @@ public class Woogle extends Configured implements Tool {
         continue;
       }
 
-      token = token.replace(key, RED + key + RESET);
+      token = token.replace(key, ANSI_RED + key + ANSI_RESET);
       printResult(token, result);
     }
     if (result == null) printResult(key, null);
@@ -71,7 +72,7 @@ public class Woogle extends Configured implements Tool {
 
   protected void printResult(String token, SearchResult result) {
     if (result == null) {
-      System.out.println(token + ": not found\n");
+      System.out.println(token + ": not found");
       return;
     }
 
@@ -94,7 +95,7 @@ public class Woogle extends Configured implements Tool {
         System.out.print(" ");
         System.out.print(position);
       }
-      System.out.println("\n");
+      System.out.println();
     }
   }
 }
