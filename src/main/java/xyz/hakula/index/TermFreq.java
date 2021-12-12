@@ -39,19 +39,19 @@ public class TermFreq {
     @Override
     public void reduce(Text key, Iterable<TokenPositionsWritable> values, Context context)
         throws IOException, InterruptedException {
-      var tokenPositionsList = new ArrayList<TokenPositionsWritable>();
+      ArrayList<TokenPositionsWritable> tokenPositionsList = new ArrayList<>();
       long totalTokenCount = 0;
-      for (var value : values) {
+      for (TokenPositionsWritable value : values) {
         tokenPositionsList.add(WritableUtils.clone(value, context.getConfiguration()));
         totalTokenCount += value.getPositions().length;
       }
 
-      var filename = key.toString();
-      for (var tokenPositions : tokenPositionsList) {
-        var token = tokenPositions.getToken();
-        var positions = tokenPositions.getPositions();
-        var tokenCount = positions.length;
-        var termFreq = (double) tokenCount / totalTokenCount;
+      String filename = key.toString();
+      for (TokenPositionsWritable tokenPositions : tokenPositionsList) {
+        String token = tokenPositions.getToken();
+        Writable[] positions = tokenPositions.getPositions();
+        long tokenCount = positions.length;
+        double termFreq = (double) tokenCount / totalTokenCount;
         this.key.set(token);
         this.value.set(filename, tokenCount, termFreq, positions);
         context.write(this.key, this.value);

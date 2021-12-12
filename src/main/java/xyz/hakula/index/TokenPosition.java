@@ -24,12 +24,12 @@ public class TokenPosition {
     @Override
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
-      var filename = ((FileSplit) context.getInputSplit()).getPath().getName();
-      var offset = key.get();  // byte offset
+      String filename = ((FileSplit) context.getInputSplit()).getPath().getName();
+      long offset = key.get();  // byte offset
 
-      var it = new StringTokenizer(value.toString(), " \t\r\f");
+      StringTokenizer it = new StringTokenizer(value.toString(), " \t\r\f");
       while (it.hasMoreTokens()) {
-        var token = it.nextToken().toLowerCase(Locale.ROOT);
+        String token = it.nextToken().toLowerCase(Locale.ROOT);
         this.key.set(token, filename);
         this.offset.set(offset);
         context.write(this.key, this.offset);
@@ -48,12 +48,12 @@ public class TokenPosition {
     @Override
     public void reduce(TokenFromFileWritable key, Iterable<LongWritable> values, Context context)
         throws IOException, InterruptedException {
-      var offsets = new ArrayList<LongWritable>();
-      for (var value : values) {
+      ArrayList<LongWritable> offsets = new ArrayList<>();
+      for (LongWritable value : values) {
         offsets.add(WritableUtils.clone(value, context.getConfiguration()));
       }
       offsets.sort(LongWritable::compareTo);
-      this.offsets.set(offsets.toArray(LongWritable[]::new));
+      this.offsets.set(offsets.toArray(new LongWritable[0]));
       context.write(key, this.offsets);
     }
   }

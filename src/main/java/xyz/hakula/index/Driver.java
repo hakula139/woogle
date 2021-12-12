@@ -22,23 +22,23 @@ public class Driver extends Configured implements Tool {
   private static final String TEMP_PATH = "temp";
 
   public static void main(String[] args) throws Exception {
-    var conf = new Configuration();
+    Configuration conf = new Configuration();
     System.exit(ToolRunner.run(conf, new Driver(), args));
   }
 
   public int run(String[] args) throws Exception {
-    var inputPath = new Path(args[0]);
-    var tempPath = new Path(TEMP_PATH);
-    var tempPath1 = new Path(TEMP_PATH, "output_job1");
-    var tempPath2 = new Path(TEMP_PATH, "output_job2");
-    var outputPath = new Path(args[1]);
+    Path inputPath = new Path(args[0]);
+    Path tempPath = new Path(TEMP_PATH);
+    Path tempPath1 = new Path(TEMP_PATH, "output_job1");
+    Path tempPath2 = new Path(TEMP_PATH, "output_job2");
+    Path outputPath = new Path(args[1]);
 
-    var conf = getConf();
-    var fs = FileSystem.get(conf);
+    Configuration conf = getConf();
+    FileSystem fs = FileSystem.get(conf);
     if (fs.exists(tempPath)) fs.delete(tempPath, true);
     if (fs.exists(outputPath)) fs.delete(outputPath, true);
 
-    var totalFileCount = fs.getContentSummary(inputPath).getFileCount();
+    long totalFileCount = fs.getContentSummary(inputPath).getFileCount();
     if (totalFileCount == 0) return 0;
     conf.setLong("totalFileCount", totalFileCount);
 
@@ -51,7 +51,7 @@ public class Driver extends Configured implements Tool {
 
   private boolean runJob1(Path inputPath, Path outputPath)
       throws IOException, InterruptedException, ClassNotFoundException {
-    var job1 = Job.getInstance(getConf(), "token position");
+    Job job1 = Job.getInstance(getConf(), "token position");
     job1.setJarByClass(TokenPosition.class);
 
     job1.setMapperClass(TokenPosition.Map.class);
@@ -72,7 +72,7 @@ public class Driver extends Configured implements Tool {
 
   private boolean runJob2(Path inputPath, Path outputPath)
       throws IOException, InterruptedException, ClassNotFoundException {
-    var job2 = Job.getInstance(getConf(), "term frequency");
+    Job job2 = Job.getInstance(getConf(), "term frequency");
     job2.setJarByClass(TermFreq.class);
 
     job2.setInputFormatClass(SequenceFileInputFormat.class);
@@ -80,7 +80,7 @@ public class Driver extends Configured implements Tool {
     job2.setMapOutputKeyClass(Text.class);
     job2.setMapOutputValueClass(TokenPositionsWritable.class);
 
-    var totalFileCount = getConf().getLong("totalFileCount", 0);
+    long totalFileCount = getConf().getLong("totalFileCount", 0);
     job2.setReducerClass(TermFreq.Reduce.class);
     job2.setNumReduceTasks((int) totalFileCount);
     job2.setOutputKeyClass(Text.class);
@@ -95,7 +95,7 @@ public class Driver extends Configured implements Tool {
 
   private boolean runJob3(Path inputPath, Path outputPath)
       throws IOException, InterruptedException, ClassNotFoundException {
-    var job3 = Job.getInstance(getConf(), "inverted index");
+    Job job3 = Job.getInstance(getConf(), "inverted index");
     job3.setJarByClass(InvertedIndex.class);
 
     job3.setInputFormatClass(SequenceFileInputFormat.class);
