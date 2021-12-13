@@ -19,7 +19,6 @@ import java.util.Locale;
 import java.util.Scanner;
 
 public class Woogle extends Configured implements Tool {
-  private static final String INPUT_PATH = "output";
   private static final String ANSI_RED = "\033[1;31m";
   private static final String ANSI_RESET = "\033[0m";
 
@@ -35,11 +34,12 @@ public class Woogle extends Configured implements Tool {
     System.out.print("Please input a keyword:\n> ");
     String key = scanner.nextLine().trim().toLowerCase(Locale.ROOT);
     int partition = getPartition(key);
-    Path inputPath = new Path(INPUT_PATH, String.format("part-r-%05d", partition));
+    Path inputPath = new Path(args[0]);
+    Path filePath = new Path(inputPath, String.format("part-r-%05d", partition));
 
     Configuration conf = getConf();
     FileSystem fs = FileSystem.get(conf);
-    try (BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(inputPath)))) {
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(filePath)))) {
       search(reader, key);
     }
     return 0;
