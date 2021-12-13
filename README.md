@@ -1,4 +1,4 @@
-# woogle
+# Woogle
 
 A toy search engine for the Wikipedia Corpus, utilizing inverted index, built with Hadoop MapReduce, written in Java.
 
