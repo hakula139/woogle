@@ -18,7 +18,6 @@ import java.util.Locale;
 import java.util.Scanner;
 
 public class Woogle extends Configured implements Tool {
-  private static final String INPUT_PATH = "output";
   private static final String ANSI_RED = "\033[1;31m";
   private static final String ANSI_RESET = "\033[0m";
 
@@ -34,11 +33,12 @@ public class Woogle extends Configured implements Tool {
     System.out.print("Please input a keyword:\n> ");
     var key = scanner.nextLine().trim().toLowerCase(Locale.ROOT);
     var partition = getPartition(key);
-    var inputPath = new Path(INPUT_PATH, String.format("part-r-%05d", partition));
+    var inputPath = new Path(args[0]);
+    var filePath = new Path(inputPath, String.format("part-r-%05d", partition));
 
     var conf = getConf();
     var fs = FileSystem.get(conf);
-    try (var reader = new BufferedReader(new InputStreamReader(fs.open(inputPath)))) {
+    try (var reader = new BufferedReader(new InputStreamReader(fs.open(filePath)))) {
       search(reader, key);
     }
     return 0;

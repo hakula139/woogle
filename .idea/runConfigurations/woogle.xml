@@ -2,6 +2,7 @@
   <configuration default="false" name="woogle" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="xyz.hakula.woogle.Woogle" />
     <module name="woogle" />
+    <option name="PROGRAM_PARAMETERS" value="output" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>
