@@ -2,7 +2,7 @@
   <configuration default="false" name="index" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="xyz.hakula.index.Driver" />
     <module name="woogle" />
-    <option name="PROGRAM_PARAMETERS" value="input output" />
+    <option name="PROGRAM_PARAMETERS" value="input output temp" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

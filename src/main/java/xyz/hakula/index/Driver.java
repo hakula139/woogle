@@ -19,7 +19,6 @@ import java.io.IOException;
 
 public class Driver extends Configured implements Tool {
   public static final int NUM_REDUCE_TASKS = 16;
-  private static final String TEMP_PATH = "temp";
 
   public static void main(String[] args) throws Exception {
     var conf = new Configuration();
@@ -28,23 +27,21 @@ public class Driver extends Configured implements Tool {
 
   public int run(String[] args) throws Exception {
     var inputPath = new Path(args[0]);
-    var tempPath = new Path(TEMP_PATH);
-    var tempPath1 = new Path(TEMP_PATH, "output_job1");
-    var tempPath2 = new Path(TEMP_PATH, "output_job2");
     var outputPath = new Path(args[1]);
+    var tempPath = new Path(args[2]);
+    var tempPath1 = new Path(tempPath, "output_job1");
+    var tempPath2 = new Path(tempPath, "output_job2");
 
     var conf = getConf();
     var fs = FileSystem.get(conf);
-    if (fs.exists(tempPath)) fs.delete(tempPath, true);
-    if (fs.exists(outputPath)) fs.delete(outputPath, true);
 
     var totalFileCount = fs.getContentSummary(inputPath).getFileCount();
     if (totalFileCount == 0) return 0;
     conf.setLong("totalFileCount", totalFileCount);
 
-    if (!runJob1(inputPath, tempPath1)) System.exit(1);
-    if (!runJob2(tempPath1, tempPath2)) System.exit(1);
-    if (!runJob3(tempPath2, outputPath)) System.exit(1);
+    if (!fs.exists(tempPath1) && !runJob1(inputPath, tempPath1)) System.exit(1);
+    if (!fs.exists(tempPath2) && !runJob2(tempPath1, tempPath2)) System.exit(1);
+    if (!fs.exists(outputPath) && !runJob3(tempPath2, outputPath)) System.exit(1);
 
     return 0;
   }
