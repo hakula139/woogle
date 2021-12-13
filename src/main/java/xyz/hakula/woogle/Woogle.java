@@ -34,7 +34,7 @@ public class Woogle extends Configured implements Tool {
       System.out.print("Please input a keyword:\n> ");
       key = scanner.nextLine().trim().toLowerCase(Locale.ROOT);
     }
-    if (key.isBlank()) return 0;
+    if (key.isEmpty()) return 0;
 
     int partition = getPartition(key);
     Path inputPath = new Path(args[0]);
