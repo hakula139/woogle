@@ -29,9 +29,13 @@ public class Woogle extends Configured implements Tool {
   }
 
   public int run(String[] args) throws Exception {
-    var scanner = new Scanner(System.in);
-    System.out.print("Please input a keyword:\n> ");
-    var key = scanner.nextLine().trim().toLowerCase(Locale.ROOT);
+    var key = "";
+    try (var scanner = new Scanner(System.in)) {
+      System.out.print("Please input a keyword:\n> ");
+      key = scanner.nextLine().trim().toLowerCase(Locale.ROOT);
+    }
+    if (key.isBlank()) return 0;
+
     var partition = getPartition(key);
     var inputPath = new Path(args[0]);
     var filePath = new Path(inputPath, String.format("part-r-%05d", partition));
