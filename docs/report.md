@@ -17,6 +17,10 @@
         - [3.3.2 搜索结果格式](#332-搜索结果格式)
     - [4. 程序文件 / 类功能说明](#4-程序文件--类功能说明)
     - [5. 架构以及模块实现方法说明](#5-架构以及模块实现方法说明)
+      - [5.0 总览](#50-总览)
+      - [5.1 Job 1 - token position](#51-job-1---token-position)
+      - [5.2 Job 2 - token count](#52-job-2---token-count)
+      - [5.3 Job 3 - inverted index](#53-job-3---inverted-index)
   - [贡献者](#贡献者)
   - [许可协议](#许可协议)
 
@@ -182,6 +186,16 @@ aaaa: not found
     - `Woogle.java`：检索程序的主类，从终端读取用户输入，定位到对应的索引文件进行查询，然后利用 `model/` 里提供的方法格式化输出到终端
 
 ### 5. 架构以及模块实现方法说明
+
+#### 5.0 总览
+
+项目的整体架构分为 3 个 MapReduce Job，我们先来看一下数据是怎么变化的。
+
+#### 5.1 Job 1 - token position
+
+#### 5.2 Job 2 - token count
+
+#### 5.3 Job 3 - inverted index
 
 ## 贡献者
 
