@@ -17,6 +17,7 @@ import xyz.hakula.index.io.*;
 
 import java.io.*;
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 public class Driver extends Configured implements Tool {
   public static final int NUM_REDUCE_TASKS = 16;
@@ -117,8 +118,10 @@ public class Driver extends Configured implements Tool {
   }
 
   protected void dumpToFile(Path path, FileSystem fs) throws IOException {
-    try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fs.create(path, true)))) {
-      for (Entry entry : fileTokenCount.entrySet()) {
+    try (BufferedWriter writer = new BufferedWriter(
+        new OutputStreamWriter(fs.create(path, true))
+    )) {
+      for (Entry<String, Long> entry : fileTokenCount.entrySet()) {
         writer.write(entry.getKey() + "\t" + entry.getValue() + "\n");
       }
     }
@@ -130,7 +133,7 @@ public class Driver extends Configured implements Tool {
       while ((line = reader.readLine()) != null) {
         String[] lineSplit = line.split("\t");
         String filename = lineSplit[0];
-        long totalTokenCount = Long.valueOf(lineSplit[1]);
+        long totalTokenCount = Long.parseLong(lineSplit[1]);
         fileTokenCount.put(filename, totalTokenCount);
       }
     }

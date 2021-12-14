@@ -10,6 +10,7 @@ import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 import xyz.hakula.index.Driver;
 import xyz.hakula.woogle.model.SearchResult;
+import xyz.hakula.woogle.model.TermFreq;
 
 import java.io.BufferedReader;
 import java.io.IOException;

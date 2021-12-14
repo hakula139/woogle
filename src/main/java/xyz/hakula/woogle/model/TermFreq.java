@@ -20,6 +20,21 @@ public class TermFreq {
     this.positions = positions;
   }
 
+  public static TermFreq parse(String entry) {
+    String[] entrySplit = entry.split(Pattern.quote(DELIM));
+    String filename = entrySplit[0];
+    long tokenCount = Long.parseLong(entrySplit[1]);
+    double termFreq = Double.parseDouble(entrySplit[2]);
+    String[] positionsSplit = entrySplit[3].split(Pattern.quote(POS_ARRAY_DELIM));
+    long[] positions = Arrays.stream(positionsSplit).mapToLong(Long::parseLong).toArray();
+    return new TermFreq(filename, tokenCount, termFreq, positions);
+  }
+
+  public static TermFreq[] parseArray(String entries) {
+    String[] entriesSplit = entries.split(Pattern.quote(ARRAY_DELIM));
+    return Arrays.stream(entriesSplit).map(TermFreq::parse).toArray(TermFreq[]::new);
+  }
+
   public String filename() {
     return filename;
   }
@@ -34,20 +49,5 @@ public class TermFreq {
 
   public long[] positions() {
     return positions;
-  }
-
-  public static TermFreq parse(String entry) {
-    String[] entrySplit = entry.split(Pattern.quote(DELIM));
-    String filename = entrySplit[0];
-    long tokenCount = Long.parseLong(entrySplit[1]);
-    double termFreq = Double.parseDouble(entrySplit[2]);
-    String[] positionsSplit = entrySplit[3].split(Pattern.quote(POS_ARRAY_DELIM));
-    long[] positions = Arrays.stream(positionsSplit).mapToLong(Long::parseLong).toArray();
-    return new TermFreq(filename, tokenCount, termFreq, positions);
-  }
-
-  public static TermFreq[] parseArray(String entries) {
-    String[] entriesSplit = entries.split(Pattern.quote(ARRAY_DELIM));
-    return Arrays.stream(entriesSplit).map(TermFreq::parse).toArray(TermFreq[]::new);
   }
 }

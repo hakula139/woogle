@@ -13,18 +13,18 @@ public class SearchResult {
     this.termFreqs = termFreqs;
   }
 
+  public static SearchResult parse(String entry) {
+    String[] entrySplit = entry.split(Pattern.quote(DELIM));
+    double inverseDocumentFreq = Double.parseDouble(entrySplit[0]);
+    TermFreq[] termFreqs = TermFreq.parseArray(entrySplit[1]);
+    return new SearchResult(inverseDocumentFreq, termFreqs);
+  }
+
   public double inverseDocumentFreq() {
     return inverseDocumentFreq;
   }
 
   public TermFreq[] termFreqs() {
     return termFreqs;
-  }
-
-  public static SearchResult parse(String entry) {
-    String[] entrySplit = entry.split(Pattern.quote(DELIM));
-    double inverseDocumentFreq = Double.parseDouble(entrySplit[0]);
-    TermFreq[] termFreqs = TermFreq.parseArray(entrySplit[1]);
-    return new SearchResult(inverseDocumentFreq, termFreqs);
   }
 }

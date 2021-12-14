@@ -1,5 +1,6 @@
 package xyz.hakula.index;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -41,8 +42,8 @@ public class InvertedIndex {
         ++fileCount;
       }
 
-      double inverseDocumentFreq = Math.log((double) Driver.totalFileCount / fileCount) / Math.log(2);
-      this.value.set(inverseDocumentFreq, termFreqList.toArray(TermFreqWritable[]::new));
+      double idf = Math.log((double) Driver.totalFileCount / fileCount) / Math.log(2);
+      this.value.set(idf, termFreqList.toArray(new TermFreqWritable[0]));
       context.write(key, this.value);
     }
   }
