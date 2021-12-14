@@ -19,7 +19,7 @@ import java.io.*;
 import java.util.HashMap;
 
 public class Driver extends Configured implements Tool {
-  public static final int NUM_REDUCE_TASKS = 16;
+  public static final int NUM_REDUCE_TASKS = 128;
   public static final String FILE_TOKEN_COUNT_FILENAME = "file_token_count.txt";
 
   public static final HashMap<String, Long> fileTokenCount = new HashMap<>();
