@@ -4,12 +4,10 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.log4j.Logger;
 import xyz.hakula.index.io.LongArrayWritable;
 import xyz.hakula.index.io.TermFreqWritable;
 import xyz.hakula.index.io.TokenFromFileWritable;
 import xyz.hakula.index.io.TokenPositionsWritable;
-import xyz.hakula.woogle.Woogle;
 
 import java.io.IOException;
 
