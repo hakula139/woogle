@@ -81,7 +81,7 @@ public class Woogle extends Configured implements Tool {
     }
 
     var idf = result.inverseDocumentFreq();
-    System.out.printf("%s: IDF = %6e | found in files:\n", token, idf);
+    System.out.printf("%s: IDF = %6f | found in files:\n", token, idf);
 
     for (var termFreq : result.termFreqs()) {
       var filename = termFreq.filename();
