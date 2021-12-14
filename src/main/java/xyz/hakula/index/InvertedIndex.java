@@ -9,14 +9,17 @@ import xyz.hakula.index.io.TermFreqWritable;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class InvertedIndex {
   public static class Map extends Mapper<Text, TermFreqWritable, Text, TermFreqWritable> {
+    public static final HashMap<String, Long> fileTokenCount = new HashMap<>();
+
     // Yield the Term Frequency (TF) of each token in each file.
     @Override
     public void map(Text key, TermFreqWritable value, Context context)
         throws IOException, InterruptedException {
-      var totalTokenCount = Driver.fileTokenCount.get(value.getFilename());
+      var totalTokenCount = fileTokenCount.get(value.getFilename());
       value.setTermFreq((double) value.getTokenCount() / totalTokenCount);
       context.write(key, value);
     }
@@ -41,7 +44,8 @@ public class InvertedIndex {
         ++fileCount;
       }
 
-      var inverseDocumentFreq = Math.log((double) Driver.totalFileCount / fileCount) / Math.log(2);
+      var totalFileCount = conf.getLong("totalFileCount", 1);
+      var inverseDocumentFreq = Math.log((double) totalFileCount / fileCount) / Math.log(2);
       this.value.set(inverseDocumentFreq, termFreqList.toArray(TermFreqWritable[]::new));
       context.write(key, this.value);
     }

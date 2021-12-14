@@ -1,5 +1,7 @@
 package xyz.hakula.index;
 
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -9,7 +11,10 @@ import xyz.hakula.index.io.TermFreqWritable;
 import xyz.hakula.index.io.TokenFromFileWritable;
 import xyz.hakula.index.io.TokenPositionsWritable;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.util.HashMap;
 
 public class TokenCount {
   public static class Map
@@ -28,6 +33,7 @@ public class TokenCount {
   }
 
   public static class Reduce extends Reducer<Text, TokenPositionsWritable, Text, TermFreqWritable> {
+    public static final HashMap<String, Long> fileTokenCount = new HashMap<>();
     private final Text key = new Text();
     private final TermFreqWritable value = new TermFreqWritable();
 
@@ -49,7 +55,7 @@ public class TokenCount {
         context.write(this.key, this.value);
         totalTokenCount += tokenCount;
       }
-      Driver.fileTokenCount.put(key.toString(), totalTokenCount);
+      fileTokenCount.put(key.toString(), totalTokenCount);
     }
   }
 }
