@@ -1,7 +1,5 @@
 package xyz.hakula.index;
 
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -11,9 +9,7 @@ import xyz.hakula.index.io.TermFreqWritable;
 import xyz.hakula.index.io.TokenFromFileWritable;
 import xyz.hakula.index.io.TokenPositionsWritable;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.util.HashMap;
 
 public class TokenCount {
