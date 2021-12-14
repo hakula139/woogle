@@ -66,6 +66,6 @@ public class InvertedIndexWritable implements Writable {
 
   @Override
   public String toString() {
-    return String.format("%6e", inverseDocumentFreq.get()) + DELIM + termFreqs;
+    return String.format("%6f", inverseDocumentFreq.get()) + DELIM + termFreqs;
   }
 }

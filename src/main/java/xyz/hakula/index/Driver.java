@@ -16,9 +16,13 @@ import org.apache.hadoop.util.ToolRunner;
 import xyz.hakula.index.io.*;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 public class Driver extends Configured implements Tool {
   public static final int NUM_REDUCE_TASKS = 16;
+
+  public static final HashMap<String, Long> fileTokenCount = new HashMap<>();
+  public static long totalFileCount = 0;
 
   public static void main(String[] args) throws Exception {
     var conf = new Configuration();
@@ -35,11 +39,11 @@ public class Driver extends Configured implements Tool {
     var conf = getConf();
     var fs = FileSystem.get(conf);
 
-    var totalFileCount = fs.getContentSummary(inputPath).getFileCount();
+    totalFileCount = fs.getContentSummary(inputPath).getFileCount();
     if (totalFileCount == 0) return 0;
-    conf.setLong("totalFileCount", totalFileCount);
 
     if (!fs.exists(tempPath1) && !runJob1(inputPath, tempPath1)) System.exit(1);
+    if (fs.exists(tempPath2) && !fs.exists(outputPath)) fs.delete(tempPath2, true);
     if (!fs.exists(tempPath2) && !runJob2(tempPath1, tempPath2)) System.exit(1);
     if (!fs.exists(outputPath) && !runJob3(tempPath2, outputPath)) System.exit(1);
 
@@ -69,16 +73,15 @@ public class Driver extends Configured implements Tool {
 
   private boolean runJob2(Path inputPath, Path outputPath)
       throws IOException, InterruptedException, ClassNotFoundException {
-    var job2 = Job.getInstance(getConf(), "term frequency");
-    job2.setJarByClass(TermFreq.class);
+    var job2 = Job.getInstance(getConf(), "token count");
+    job2.setJarByClass(TokenCount.class);
 
     job2.setInputFormatClass(SequenceFileInputFormat.class);
-    job2.setMapperClass(TermFreq.Map.class);
+    job2.setMapperClass(TokenCount.Map.class);
     job2.setMapOutputKeyClass(Text.class);
     job2.setMapOutputValueClass(TokenPositionsWritable.class);
 
-    var totalFileCount = getConf().getLong("totalFileCount", 0);
-    job2.setReducerClass(TermFreq.Reduce.class);
+    job2.setReducerClass(TokenCount.Reduce.class);
     job2.setNumReduceTasks((int) totalFileCount);
     job2.setOutputKeyClass(Text.class);
     job2.setOutputValueClass(TermFreqWritable.class);
