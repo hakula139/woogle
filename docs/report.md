@@ -99,7 +99,7 @@ java -jar woogle.jar <index_path>
 其中：
 
 - `<token>`：表示一个短语 $t$
-- `<idf>`：表示这个短语 $t$ 在所有文档 $D$ 中的**逆向文件频率** IDF (Inverse Document Frequency)，使用科学计数法表示，这里我们采用的算法是 $$\mathrm{IDF}(t, D) = \log_2{\frac{N}{\lvert \{d\in D : t\in d\} \rvert}}$$ 其中：
+- `<idf>`：表示这个短语 $t$ 在所有文档 $D$ 中的**逆向文件频率** IDF (Inverse Document Frequency)，这里我们采用的算法是 $$\mathrm{IDF}(t, D) = \log_2{\frac{N}{\lvert \{d\in D : t\in d\} \rvert}}$$ 其中：
   - $N$：表示语料库中文档的总数 $\lvert D \rvert$
   - $\lvert \{d\in D : t\in d\} \rvert$：表示出现短语 $t$ 的文档总数
 - `<filename_i>`：表示出现这个短语 $t$ 的第 $i$ 个文档 $d_i$ 的文件名
@@ -117,11 +117,11 @@ java -jar woogle.jar <index_path>
 例如（这是我自己找的小测试样例的索引结果）：
 
 ```text {.line-numbers}
-electricity	1.386294e+00 04.txt:2:9.420631e-04:5756;12566
-emergency	1.386294e+00 04.txt:1:4.710316e-04:6828
-ethnic	1.386294e+00 03.txt:2:2.844950e-03:749;2960
-european	6.931472e-01 01.txt:1:1.937984e-03:3047|04.txt:4:1.884126e-03:2981;3190;3814;11169
-fall	6.931472e-01 04.txt:1:4.710316e-04:2408|01.txt:1:1.937984e-03:413
+electricity	2.000000 04.txt:2:9.420631e-04:5756;12566
+emergency	2.000000 04.txt:1:4.710316e-04:6828
+ethnic	2.000000 03.txt:2:2.844950e-03:749;2960
+european	1.000000 01.txt:1:1.937984e-03:3047|04.txt:4:1.884126e-03:2981;3190;3814;11169
+fall	1.000000 04.txt:1:4.710316e-04:2408|01.txt:1:1.937984e-03:413
 ```
 
 索引过程中产生的日志文件会保存在 `logs/app.log` 文件里（会随日期滚动）。
@@ -152,9 +152,9 @@ Please input a keyword:
 
 ```text
 > back
-back: IDF = 6.931472e-01 | found in files:
-  02.txt: TF = 9.689922e-04 (1 times) | TF-IDF = 6.716542e-04 | positions: 3836
-  03.txt: TF = 2.844950e-03 (2 times) | TF-IDF = 1.971969e-03 | positions: 518 1398
+back: IDF = 1.000000 | found in files:
+  02.txt: TF = 9.689922e-04 (1 times) | TF-IDF = 9.689922e-04 | positions: 3836
+  03.txt: TF = 2.844950e-03 (2 times) | TF-IDF = 2.844950e-03 | positions: 518 1398
 ```
 
 这里其实我试着在不影响性能的前提下，稍微做了一点模糊检索，因此搜索结果中有时会不止出现这一个关键词，也会出现一些（但不是全部）包含这个关键词的短语。实际在命令行里展示时，短语里包含关键词的部分会标红加粗，这个是利用了 ANSI 字符颜色转义序列。
@@ -172,8 +172,14 @@ aaaa: not found
 
 - `src/main/java/`：项目源代码
   - `xyz/hakula/index/`：package `xyz.hakula.index`，倒排索引构建功能的实现
-    - `io/`：一些自定义 Writable 类的定义，令 MapReduce 的 key 和 value 可以使用自定义类型。在使接口和实现更清晰可读、易于维护的同时，也节省了每次 `join` 成 String 再 `split` 回来的性能开销。
+    - `io/`：一些自定义 Writable 类型的定义，令 MapReduce 的 key 和 value 可以使用自定义类型。在使接口和实现更清晰可读、易于维护的同时，也节省了每次 `join` 成 String 再 `split` 回来的性能开销。因为比较 trivial，这里就不细讲了，可以直接看源代码，写得很清楚。
+    - `Driver.java`：索引程序的主类，配置了所有的 Job，然后依次执行
+    - `TokenPosition.java`：第 1 个 Job，读取目录 `<input_path>` 里的文件，提取所有短语在各文件中出现的位置，保存在路径 `<temp_path>/output_job1` 下
+    - `TokenCount.java`：第 2 个 Job，读取目录 `<temp_path>/output_job1` 里的文件，统计所有短语在各文件中出现的次数，保存在路径 `<temp_path>/output_job2` 下；同时统计各文件的短语总数，保存在文件 `<temp_path>/file_token_count.txt` 里
+    - `InvertedIndex.java`：第 3 个 Job，从文件 `<temp_path>/file_token_count.txt` 里将各文件的短语总数读取到内存中；然后读取目录 `<temp_path>/output_job2` 里的文件，计算所有短语在各文件中的 TF 以及其 IDF，保存在路径 `<output_path>` 下
   - `xyz/hakula/woogle/`：package `xyz.hakula.woogle`，倒排索引检索功能的实现
+    - `model/`：一些自定义类型的定义，类似于 package `xyz.hakula.index` 下 `io/` 里的类，此外也提供了一些格式化输出索引的方法
+    - `Woogle.java`：检索程序的主类，从终端读取用户输入，定位到对应的索引文件进行查询，然后利用 `model/` 里提供的方法格式化输出到终端
 
 ### 5. 架构以及模块实现方法说明
 
