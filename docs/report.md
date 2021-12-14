@@ -189,7 +189,43 @@ aaaa: not found
 
 #### 5.0 总览
 
-项目的整体架构分为 3 个 MapReduce Job，我们先来看一下数据是怎么变化的。
+项目的整体架构分为 3 个 MapReduce Job。一般来说，关注程序的输入和输出是一个理清脉络的好方法。
+
+开始时，输入数据的格式如下：
+
+```text {.line-numbers}
+<token> <token> <token> <token> <token> <token> <token> <token> <token> <token> <token> <token>
+```
+
+这里每个 `<token>` 就代表了一个短语。
+
+首先这些数据经过 Job 1 - token position 的 Mapper，输出所有短语在各文件中出现的位置，格式如下：
+
+```text {.line-numbers}
+<token>@<filename>  <position>
+```
+
+其中，`Tab` 的左右侧分别是 key 和 value。这里每行的 `<position>` 只有 1 个。
+
+然后这些数据经过 Job 1 的 Reducer，将同文件下相同短语（也就是 key 相同）的位置聚合了起来，输出所有短语在各文件中出现的位置数组，格式如下：
+
+```text {.line-numbers}
+<token>@<filename>  <position>;<position>;<position>
+```
+
+或者我们表示成：
+
+```text {.line-numbers}
+<token>@<filename>  [<position>]
+```
+
+至此 Job 1 结束，所有结果保存在目录 `<temp_path>/output_job1>` 下的文件里。为了节省 Job 间原始数据和 String 之间互相转换的开销，这里我们直接顺序输出二进制格式的数据（`SequenceFileOutputFormat`），因此直接打开文件是无法阅读的。
+
+接下来，这些数据经过 Job 2 - token count 的 Mapper，将 key 里的 `<filename>` 字段移到 value 里，以便后续可以对 `<token>` 聚合处理，格式如下：
+
+```text {.line-numbers}
+<filename>  <token>:[<position>]
+```
 
 #### 5.1 Job 1 - token position
 
