@@ -34,7 +34,7 @@ public class TokenCount {
     // Yield the token count of each token in each file,
     // and calculate the total token count of each file.
     // (<filename>, (<token>, [<offset>]))
-    // -> (<token>, <filename>:<tokenCount>:0:[<offsets>])
+    // -> (<token>, (<filename>, <tokenCount>, 0, [<offsets>]))
     @Override
     public void reduce(Text key, Iterable<TokenPositionsWritable> values, Context context)
         throws IOException, InterruptedException {
