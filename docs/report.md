@@ -202,7 +202,7 @@ aaaa: not found
 首先这些数据经过 Job 1 - token position 的 Mapper，输出所有短语在各文件中出现的位置，格式如下：
 
 ```text {.line-numbers}
-<token>@<filename>  <position>
+<token>@<filename>	<position>
 ```
 
 其中，`Tab` 的左右侧分别是 key 和 value。这里每行的 `<position>` 只有 1 个。
@@ -210,22 +210,38 @@ aaaa: not found
 然后这些数据经过 Job 1 的 Reducer，将同文件下相同短语（也就是 key 相同）的位置聚合了起来，输出所有短语在各文件中出现的位置数组，格式如下：
 
 ```text {.line-numbers}
-<token>@<filename>  <position>;<position>;<position>
+<token>@<filename>	<position>;<position>;<position>
 ```
 
 或者我们表示成：
 
 ```text {.line-numbers}
-<token>@<filename>  [<position>]
+<token>@<filename>	[<position>]
 ```
 
 至此 Job 1 结束，所有结果保存在目录 `<temp_path>/output_job1>` 下的文件里。为了节省 Job 间原始数据和 String 之间互相转换的开销，这里我们直接顺序输出二进制格式的数据（`SequenceFileOutputFormat`），因此直接打开文件是无法阅读的。
 
-接下来，这些数据经过 Job 2 - token count 的 Mapper，将 key 里的 `<filename>` 字段移到 value 里，以便后续可以对 `<token>` 聚合处理，格式如下：
+接下来，这些数据经过 Job 2 - token count 的 Mapper，将 key 里的 `<token>` 字段移到 value 里，以便后续可以对 `<filename>` 聚合处理，格式如下：
 
 ```text {.line-numbers}
-<filename>  <token>:[<position>]
+<filename>	<token>:[<position>]
 ```
+
+然后这些数据经过 Job 2 的 Reducer，对于每个文件，统计各短语在其中出现的次数，并交换 `<token>` 和 `<filename>` 字段的位置，为 Job 3 作准备，格式如下：
+
+```text {.line-numbers}
+<token>	<filename>:<count>:0:[<position>]
+```
+
+这里这个 `0` 是 TF 的占位符，目前还无法计算（之后会讲为什么），因此先留空。
+
+与此同时，对这些短语的次数进行求和，从而得到每个文件的短语总数，格式如下：
+
+```text {.line-numbers}
+<filename>	<total_count>
+```
+
+至此 Job 2 结束，所有结果保存在目录 `<temp_path>/output_job2>` 下的文件里。
 
 #### 5.1 Job 1 - token position
 
