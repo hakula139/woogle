@@ -16,7 +16,6 @@ import org.apache.hadoop.util.ToolRunner;
 import xyz.hakula.index.io.*;
 
 import java.io.*;
-import java.util.Map.Entry;
 
 public class Driver extends Configured implements Tool {
   public static final int NUM_REDUCE_TASKS = 128;
@@ -32,23 +31,18 @@ public class Driver extends Configured implements Tool {
     Path tempPath = new Path(args[2]);
     Path tempPath1 = new Path(tempPath, "output_job1");
     Path tempPath2 = new Path(tempPath, "output_job2");
-    Path fileTokenCountPath = new Path(tempPath, "file_token_count.txt");
+    Path fileTokenCountPath = new Path(tempPath, "file_token_count");
 
     Configuration conf = getConf();
     try (FileSystem fs = FileSystem.get(conf)) {
       long totalFileCount = fs.getContentSummary(inputPath).getFileCount();
       if (totalFileCount == 0) return 0;
       conf.setLong("totalFileCount", totalFileCount);
+      conf.set("fileTokenCountPath", fileTokenCountPath.toString());
 
-      if (!fs.exists(tempPath1) && !runJob1(inputPath, tempPath1)) {
-        System.exit(1);
-      }
-      if (!fs.exists(tempPath2) && !runJob2(tempPath1, tempPath2, fileTokenCountPath)) {
-        System.exit(1);
-      }
-      if (!fs.exists(outputPath) && !runJob3(tempPath2, outputPath, fileTokenCountPath)) {
-        System.exit(1);
-      }
+      if (!fs.exists(tempPath1) && !runJob1(inputPath, tempPath1)) System.exit(1);
+      if (!fs.exists(tempPath2) && !runJob2(tempPath1, tempPath2)) System.exit(1);
+      if (!fs.exists(outputPath) && !runJob3(tempPath2, outputPath)) System.exit(1);
     }
     return 0;
   }
@@ -74,7 +68,7 @@ public class Driver extends Configured implements Tool {
     return job1.waitForCompletion(true);
   }
 
-  private boolean runJob2(Path inputPath, Path outputPath, Path fileTokenCountPath)
+  private boolean runJob2(Path inputPath, Path outputPath)
       throws IOException, InterruptedException, ClassNotFoundException {
     Configuration conf = getConf();
     Job job2 = Job.getInstance(conf, "token count");
@@ -95,12 +89,10 @@ public class Driver extends Configured implements Tool {
     FileInputFormat.addInputPath(job2, inputPath);
     FileOutputFormat.setOutputPath(job2, outputPath);
 
-    boolean ret = job2.waitForCompletion(true);
-    dumpToFile(fileTokenCountPath);
-    return ret;
+    return job2.waitForCompletion(true);
   }
 
-  private boolean runJob3(Path inputPath, Path outputPath, Path fileTokenCountPath)
+  private boolean runJob3(Path inputPath, Path outputPath)
       throws IOException, InterruptedException, ClassNotFoundException {
     Job job3 = Job.getInstance(getConf(), "inverted index");
     job3.setJarByClass(InvertedIndex.class);
@@ -118,31 +110,6 @@ public class Driver extends Configured implements Tool {
     FileInputFormat.addInputPath(job3, inputPath);
     FileOutputFormat.setOutputPath(job3, outputPath);
 
-    loadFromFile(fileTokenCountPath);
     return job3.waitForCompletion(true);
-  }
-
-  protected void dumpToFile(Path path) throws IOException {
-    FileSystem fs = FileSystem.get(getConf());
-    try (BufferedWriter writer = new BufferedWriter(
-        new OutputStreamWriter(fs.create(path, true))
-    )) {
-      for (Entry<String, Long> entry : TokenCount.Reduce.fileTokenCount.entrySet()) {
-        writer.write(entry.getKey() + "\t" + entry.getValue() + "\n");
-      }
-    }
-  }
-
-  protected void loadFromFile(Path path) throws IOException {
-    FileSystem fs = FileSystem.get(getConf());
-    try (BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(path)))) {
-      String line;
-      while ((line = reader.readLine()) != null) {
-        String[] lineSplit = line.split("\t");
-        String filename = lineSplit[0];
-        long totalTokenCount = Long.parseLong(lineSplit[1]);
-        InvertedIndex.Map.fileTokenCount.put(filename, totalTokenCount);
-      }
-    }
   }
 }
