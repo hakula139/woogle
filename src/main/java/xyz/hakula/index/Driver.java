@@ -15,7 +15,7 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import xyz.hakula.index.io.*;
 
-import java.io.*;
+import java.io.IOException;
 
 public class Driver extends Configured implements Tool {
   public static final int NUM_REDUCE_TASKS = 128;
@@ -31,23 +31,18 @@ public class Driver extends Configured implements Tool {
     var tempPath = new Path(args[2]);
     var tempPath1 = new Path(tempPath, "output_job1");
     var tempPath2 = new Path(tempPath, "output_job2");
-    var fileTokenCountPath = new Path(tempPath, "file_token_count.txt");
+    var fileTokenCountPath = new Path(tempPath, "file_token_count");
 
     var conf = getConf();
     try (var fs = FileSystem.get(conf)) {
       var totalFileCount = fs.getContentSummary(inputPath).getFileCount();
       if (totalFileCount == 0) return 0;
       conf.setLong("totalFileCount", totalFileCount);
+      conf.set("fileTokenCountPath", fileTokenCountPath.toString());
 
-      if (!fs.exists(tempPath1) && !runJob1(inputPath, tempPath1)) {
-        System.exit(1);
-      }
-      if (!fs.exists(tempPath2) && !runJob2(tempPath1, tempPath2, fileTokenCountPath)) {
-        System.exit(1);
-      }
-      if (!fs.exists(outputPath) && !runJob3(tempPath2, outputPath, fileTokenCountPath)) {
-        System.exit(1);
-      }
+      if (!fs.exists(tempPath1) && !runJob1(inputPath, tempPath1)) System.exit(1);
+      if (!fs.exists(tempPath2) && !runJob2(tempPath1, tempPath2)) System.exit(1);
+      if (!fs.exists(outputPath) && !runJob3(tempPath2, outputPath)) System.exit(1);
     }
     return 0;
   }
@@ -73,7 +68,7 @@ public class Driver extends Configured implements Tool {
     return job1.waitForCompletion(true);
   }
 
-  private boolean runJob2(Path inputPath, Path outputPath, Path fileTokenCountPath)
+  private boolean runJob2(Path inputPath, Path outputPath)
       throws IOException, InterruptedException, ClassNotFoundException {
     var conf = getConf();
     var job2 = Job.getInstance(conf, "token count");
@@ -94,12 +89,10 @@ public class Driver extends Configured implements Tool {
     FileInputFormat.addInputPath(job2, inputPath);
     FileOutputFormat.setOutputPath(job2, outputPath);
 
-    var ret = job2.waitForCompletion(true);
-    dumpToFile(fileTokenCountPath);
-    return ret;
+    return job2.waitForCompletion(true);
   }
 
-  private boolean runJob3(Path inputPath, Path outputPath, Path fileTokenCountPath)
+  private boolean runJob3(Path inputPath, Path outputPath)
       throws IOException, InterruptedException, ClassNotFoundException {
     var job3 = Job.getInstance(getConf(), "inverted index");
     job3.setJarByClass(InvertedIndex.class);
@@ -117,29 +110,6 @@ public class Driver extends Configured implements Tool {
     FileInputFormat.addInputPath(job3, inputPath);
     FileOutputFormat.setOutputPath(job3, outputPath);
 
-    loadFromFile(fileTokenCountPath);
     return job3.waitForCompletion(true);
-  }
-
-  protected void dumpToFile(Path path) throws IOException {
-    var fs = FileSystem.get(getConf());
-    try (var writer = new BufferedWriter(new OutputStreamWriter(fs.create(path, true)))) {
-      for (var entry : TokenCount.Reduce.fileTokenCount.entrySet()) {
-        writer.write(entry.getKey() + "\t" + entry.getValue() + "\n");
-      }
-    }
-  }
-
-  protected void loadFromFile(Path path) throws IOException {
-    var fs = FileSystem.get(getConf());
-    try (var reader = new BufferedReader(new InputStreamReader(fs.open(path)))) {
-      var line = "";
-      while ((line = reader.readLine()) != null) {
-        var lineSplit = line.split("\t");
-        var filename = lineSplit[0];
-        var totalTokenCount = Long.valueOf(lineSplit[1]);
-        InvertedIndex.Map.fileTokenCount.put(filename, totalTokenCount);
-      }
-    }
   }
 }
