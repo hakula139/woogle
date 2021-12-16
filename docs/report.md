@@ -108,41 +108,57 @@ java -jar woogle.jar <index_path>
 
 ##### 3.3.1 索引格式
 
-执行 `index.jar` 后，我们将在输出路径 `<output_path>` 下得到我们的索引文件，其内容格式如下：
+执行 `index.jar` 后，我们将在输出路径 `<output_path>` 下得到我们的索引文件。其中 TF 保存在根目录下，IDF 保存在子目录 `inverse_document_freq` 下，之后会解释为什么选择分开保存。
+
+TF 的格式如下（文件名：`part-r-00xxx`）：
 
 ```text {.line-numbers}
-<token>	<idf> <filename_1>:<count_1>:<tf_1>:<position_1_1>;...;<position_1_c1>|...|<filename_n>:<count_n>:<tf_n>:<position_n_1>;...;<position_n_cn>
+<token>	<filename>:<token_count>:<tf>:<position_1>;...;<position_n>
+```
+
+IDF 的格式如下（文件名：`<token>`）：
+
+```text {.line-numbers}
+<file_count> <idf>
 ```
 
 其中：
 
 - `<token>`：表示一个短语 $t$
-- `<idf>`：表示这个短语 $t$ 在所有文档 $D$ 中的**逆向文件频率** IDF (Inverse Document Frequency)，这里我们采用的算法是 $$\mathrm{IDF}(t, D) = \log_2{\frac{N}{\lvert \{d\in D : t\in d\} \rvert}}$$ 其中：
-  - $N$：表示语料库中文档的总数 $\lvert D \rvert$
-  - $\lvert \{d\in D : t\in d\} \rvert$：表示出现短语 $t$ 的文档总数
-- `<filename_i>`：表示出现这个短语 $t$ 的第 $i$ 个文档 $d_i$ 的文件名
-- `<count_i>`：表示这个短语 $t$ 在文档 $d_i$ 中出现的次数 $c_{t, d_i}$
-- `<tf_i>`：表示这个短语 $t$ 在文档 $d_i$ 中的**词频** TF (Term Frequency)，使用科学计数法表示，这里我们采用的算法是 $$\mathrm{TF}(t, d) = \frac{c_{t, d}}{\sum_{t'\in d} c_{t', d}}$$ 其中：
-  - $\sum_{t'\in d} c_{t', d}$：表示文档 $d$ 中的短语总数
-- `<position_i_j>`：表示这个短语 $t$ 在文档 $d_i$ 中出现的位置 $p_{t, d_i, j}$，这里我们取的是该短语首字符关于文档起始位置的**字节偏移量**
+- `<filename>`：表示出现这个短语 $t$ 的文档 $d$ 的文件名
+- `<token_count>`：表示这个短语 $t$ 在文档 $d$ 中出现的次数 $c_{t, d}$
+- `<tf>`：表示这个短语 $t$ 在文档 $d$ 中的**词频** TF (Term Frequency)，使用科学计数法表示，这里我们采用的算法是 $$\mathrm{TF}(t, d) = \frac{c_{t, d}}{C_d}$$ 其中 $C_d$ 表示文档 $d$ 中的短语总数
+- `<position_i>`：表示这个短语 $t$ 在文档 $d$ 中出现的位置 $p_{t, d, i}$，这里我们取的是该短语首字符关于文档起始位置的**字节偏移量**
+- `file_count`：表示出现这个短语 $t$ 的文档总数 $n_t$
+- `<idf>`：表示这个短语 $t$ 在所有文档 $D$ 中的**逆向文件频率** IDF (Inverse Document Frequency)，这里我们采用的算法是 $$\mathrm{IDF}(t) = \log_2{\frac{N}{n_t}}$$ 其中 $N$ 表示语料库中文档的总数 $\lvert D \rvert$
 
-- `<token>` 和 `<idf>` 之间以 `Tab` 分隔
-- `<idf>` 和剩余部分之间以 `Space` 分隔
-- `<filename>`, `<count>`, `<tf>`, `<positions>` 之间以 `:` 分隔
+- `<token>` 和其余部分之间以 `Space` 分隔
+- `<filename>`, `<count>`, `<tf>`, `<position>` 之间以 `:` 分隔
 - `<position>` 之间以 `;` 分隔
-- 不同文件对应的 `<filename>:<count>:<tf>:<positions>` 之间以 `|` 分隔
 
-例如（这是我自己找的小测试样例的索引结果）：
+以一个小样例的索引结果为例：
+
+TF（文件名：`part-r-00121`）：
 
 ```text {.line-numbers}
-electricity	2.000000 04.txt:2:9.420631e-04:5756;12566
-emergency	2.000000 04.txt:1:4.710316e-04:6828
-ethnic	2.000000 03.txt:2:2.844950e-03:749;2960
-european	1.000000 01.txt:1:1.937984e-03:3047|04.txt:4:1.884126e-03:2981;3190;3814;11169
-fall	1.000000 04.txt:1:4.710316e-04:2408|01.txt:1:1.937984e-03:413
+lease	04.txt:1:4.710316e-04:9045
+mobilise	02.txt:1:9.689922e-04:5182
+past	01.txt:1:1.937984e-03:472
+their	01.txt:4:7.751938e-03:285;611;1616;2684
+their	03.txt:2:2.844950e-03:2867;3033
+their	04.txt:6:2.826189e-03:1109;6786;7437;10379;10416;12914
+their	02.txt:3:2.906977e-03:5191;5326;5523
 ```
 
-索引过程中产生的日志文件会保存在 `logs/app.log` 文件里（会随日期滚动）。
+IDF（文件名：`lease`）：
+
+```text {.line-numbers}
+1 2.0
+```
+
+注意到相同 `<token>` 在不同文件里的索引也被分成了不同的行，之后也会解释原因。
+
+索引过程中产生的日志文件会保存在 `logs/app.log` 文件里（文件名随日期滚动）。
 
 ##### 3.3.2 搜索结果格式
 
@@ -156,7 +172,7 @@ Please input a keyword:
 输入关键词并回车后，程序将输出这个关键词的搜索结果，其格式如下：
 
 ```text
-<token>: IDF = <idf> | found in files:
+<token>: IDF = <idf> | found in <file_count> files:
   <filename_1>: TF = <tf_1> (<count_1> times) | TF-IDF = <tfidf_1> | positions: <position_1_1> <position_1_2> ... <position_1_c1>
   <filename_2>: TF = <tf_2> (<count_2> times) | TF-IDF = <tfidf_2> | positions: <position_2_1> <position_2_2> ... <position_2_c2>
   ...
@@ -164,18 +180,16 @@ Please input a keyword:
 
 其中：
 
-- `<tfidf_i>`：表示这个短语 $t$ 在文档 $d_i$ 中的 TF-IDF，使用科学计数法表示，这里我们采用的算法是 $$\mathrm{TFIDF}(t, d, D) = \mathrm{TF}(t, d) \cdot \mathrm{IDF}(t, D)$$ 通常，这个值可以作为这个文档在搜索结果中的权重。
+- `<tfidf_i>`：表示这个短语 $t$ 在文档 $d_i$ 中的 TF-IDF，使用科学计数法表示，这里我们采用的算法是 $$\mathrm{TFIDF}(t, d) = \mathrm{TF}(t, d) \cdot \mathrm{IDF}(t)$$ 通常，这个值可以作为这个文档在搜索结果中的权重。
 
 例如：
 
 ```text
 > back
-back: IDF = 1.000000 | found in files:
+back: IDF = 1.000000 | found in 2 files:
   02.txt: TF = 9.689922e-04 (1 times) | TF-IDF = 9.689922e-04 | positions: 3836
   03.txt: TF = 2.844950e-03 (2 times) | TF-IDF = 2.844950e-03 | positions: 518 1398
 ```
-
-这里其实我试着在不影响性能的前提下，稍微做了一点模糊检索，因此搜索结果中有时会不止出现这一个关键词，也会出现一些（但不是全部）包含这个关键词的短语。实际在命令行里展示时，短语里包含关键词的部分会标红加粗，这个是利用了 ANSI 字符颜色转义序列。
 
 如果没有找到，程序则会输出：
 
@@ -193,8 +207,8 @@ aaaa: not found
     - `io/`：一些自定义 Writable 类型的定义，令 MapReduce 的 key 和 value 可以使用自定义类型。在使接口和实现更清晰可读、易于维护的同时，也节省了每次 `join` 成 `String` 再 `split` 回来的性能开销。因为比较 trivial，这里就不细讲了，可以直接看源代码，写得很清楚。
     - `Driver.java`：索引程序的主类，配置了所有的 Job，然后依次执行
     - `TokenPosition.java`：第 1 个 Job，读取目录 `<input_path>` 里的文件，提取所有短语在各文件中出现的位置，保存在路径 `<temp_path>/output_job1` 下
-    - `TokenCount.java`：第 2 个 Job，读取目录 `<temp_path>/output_job1` 里的文件，统计所有短语在各文件中出现的次数，保存在路径 `<temp_path>/output_job2` 下；同时统计各文件的短语总数，保存在路径 `<temp_path>/file_token_count` 下对应的文件名里
-    - `InvertedIndex.java`：第 3 个 Job，从路径 `<temp_path>/file_token_count` 里按需读取各文件的短语总数到内存中；然后读取目录 `<temp_path>/output_job2` 里的文件，计算所有短语在各文件中的 TF 以及其 IDF，保存在路径 `<output_path>` 下
+    - `TokenCount.java`：第 2 个 Job，读取目录 `<temp_path>/output_job1` 里的文件，统计所有短语在各文件中出现的次数，保存在路径 `<temp_path>/output_job2` 下；同时统计各文件的短语总数，保存在路径 `<temp_path>/file_token_count` 下对应的文件名（`<filename>`）里
+    - `InvertedIndex.java`：第 3 个 Job，从路径 `<temp_path>/file_token_count` 里按需读取各文件的短语总数到内存中；然后读取目录 `<temp_path>/output_job2` 里的文件，计算所有短语在各文件中的 TF，保存在路径 `<output_path>` 下；同时计算所有短语的 IDF，保存在路径 `<output_path>/inverse_document_freq` 下对应的文件名（`<token>`）里
   - `xyz/hakula/woogle/`：package `xyz.hakula.woogle`，倒排索引检索功能的实现
     - `model/`：一些自定义类型的定义，类似于 package `xyz.hakula.index` 下 `io/` 里的类，此外也提供了一些格式化输出索引的方法
     - `Woogle.java`：检索程序的主类，从终端读取用户输入，定位到对应的索引文件进行查询，然后利用 `model/` 里提供的方法格式化输出到终端
