@@ -32,10 +32,12 @@
         - [5.5.2 Mapper](#552-mapper)
         - [5.5.3 Reducer](#553-reducer)
       - [5.6 Woogle](#56-woogle)
-        - [5.6.1 getPartition()](#561-getpartition)
-        - [5.6.2 search()](#562-search)
-        - [5.6.3 printResult()](#563-printresult)
-  - [贡献者](#贡献者)
+        - [5.6.1 `searchAndPrint()`](#561-searchandprint)
+        - [5.6.2 `getPartition()`](#562-getpartition)
+        - [5.6.3 `InverseDocumentFreq.parse()`](#563-inversedocumentfreqparse)
+        - [5.6.4 `printInverseDocumentFreq()`](#564-printinversedocumentfreq)
+        - [5.6.5 `TermFreq.parse()`](#565-termfreqparse)
+        - [5.6.6 `printInvertedIndex()`](#566-printinvertedindex)
   - [许可协议](#许可协议)
 
 ## 项目报告
@@ -61,7 +63,7 @@ eu fugiat nulla pariatur Excepteur sint occaecat cupidatat non proident sunt in 
 
 ### 2. 参与人员任务分工说明
 
-- [**陈泓宜（18307130003）**](https://github.com/hakula139)：独立完成全部功能，实现了对语料库倒排索引的构建，实现了基于索引的关键词搜索功能。
+- [**陈泓宜（18307130003）**](https://github.com/hakula139) - 复旦大学：独立完成全部功能，实现了对语料库倒排索引的构建，实现了基于索引的关键词搜索功能。
 
 ### 3. 程序启动与操作说明
 
@@ -132,8 +134,8 @@ IDF 的格式如下（文件名：`<token>`）：
 - `file_count`：表示出现这个短语 $t$ 的文档总数 $n_t$
 - `<idf>`：表示这个短语 $t$ 在所有文档 $D$ 中的**逆向文件频率** IDF (Inverse Document Frequency)，这里我们采用的算法是 $$\mathrm{IDF}(t) = \log_2{\frac{N}{n_t}}$$ 其中 $N$ 表示语料库中文档的总数 $\lvert D \rvert$
 
-- `<token>` 和其余部分之间以 `Space` 分隔
-- `<filename>`, `<count>`, `<tf>`, `<position>` 之间以 `:` 分隔
+- `<token>` 和其余部分之间以 `Tab` 分隔
+- `<filename>`, `<token_count>`, `<tf>`, `<position>` 之间以 `:` 分隔
 - `<position>` 之间以 `;` 分隔
 
 以一个小样例的索引结果为例：
@@ -173,14 +175,13 @@ Please input a keyword:
 
 ```text
 <token>: IDF = <idf> | found in <file_count> files:
-  <filename_1>: TF = <tf_1> (<count_1> times) | TF-IDF = <tfidf_1> | positions: <position_1_1> <position_1_2> ... <position_1_c1>
-  <filename_2>: TF = <tf_2> (<count_2> times) | TF-IDF = <tfidf_2> | positions: <position_2_1> <position_2_2> ... <position_2_c2>
+  <filename>: TF = <tf> (<token_count> times) | TF-IDF = <tfidf> | positions: <position> <position> ...
   ...
 ```
 
 其中：
 
-- `<tfidf_i>`：表示这个短语 $t$ 在文档 $d_i$ 中的 TF-IDF，使用科学计数法表示，这里我们采用的算法是 $$\mathrm{TFIDF}(t, d) = \mathrm{TF}(t, d) \cdot \mathrm{IDF}(t)$$ 通常，这个值可以作为这个文档在搜索结果中的权重。
+- `<tfidf>`：表示这个短语 $t$ 在文档 $d$ 中的 TF-IDF，使用科学计数法表示，这里我们采用的算法是 $$\mathrm{TFIDF}(t, d) = \mathrm{TF}(t, d) \cdot \mathrm{IDF}(t)$$ 通常，这个值可以作为这个文档在搜索结果中的权重。
 
 例如：
 
@@ -247,7 +248,7 @@ aaaa: not found
 <token>@<filename>	[<position>]
 ```
 
-至此 Job 1 结束，所有结果保存在目录 `<temp_path>/output_job1>` 下的文件里。为了节省 Job 间原始数据和 `String` 之间互相转换的开销，这里我们直接顺序输出二进制格式的数据（`SequenceFileOutputFormat`），因此直接打开文件是无法阅读的。
+至此 Job 1 结束，所有结果保存在目录 `<temp_path>/output_job1` 下的文件里。为了节省 Job 间原始数据和 `String` 之间互相转换的开销，这里我们直接顺序输出二进制格式的数据（`SequenceFileOutputFormat`），因此直接打开文件是无法阅读的。
 
 接下来这些数据经过 Job 2 - token count 的 Mapper，将 key 里的 `<token>` 字段移到 value 里，以便后续可以对 `<filename>` 聚合处理，格式如下：
 
@@ -258,7 +259,7 @@ aaaa: not found
 然后这些数据经过 Job 2 的 Reducer，对于每个文件，统计各短语在其中出现的次数，并交换 `<token>` 和 `<filename>` 字段的位置，为 Job 3 做准备，格式如下：
 
 ```text {.line-numbers}
-<token>	<filename>:<count>:0:[<position>]
+<token>	<filename>:<token_count>:0:[<position>]
 ```
 
 这里这个 `0` 是 TF 的占位符，目前还无法计算（之后会讲为什么），因此先留空。
@@ -274,22 +275,24 @@ aaaa: not found
 接下来这些数据经过 Job 3 - inverted index 的 Mapper，根据文件 `<temp_path>/file_token_count/<filename>` 里保存的文件短语总数，计算得到 TF，替换掉原来的占位符，格式如下：
 
 ```text {.line-numbers}
-<token>	<filename>:<count>:<tf>:[<position>]
+<token>	<filename>:<token_count>:<tf>:[<position>]
 ```
 
-最后这些数据经过 Job 3 的 Reducer，对于每个短语，将所有的 TF 信息聚合起来，得到的数组大小就是出现了这个短语的文件总数。然后根据预先在外侧（`xyz.hakula.index.Driver`）统计的文件总数，计算得到每个短语的 IDF，格式如下：
+最后这些数据经过 Job 3 的 Reducer，对于每个短语，聚合在这里的 TF 条目总数就是出现了这个短语的文件总数。然后根据预先在外侧（`xyz.hakula.index.Driver`）统计的文件总数，计算得到每个短语的 IDF。
+
+TF 直接原样输出，格式如下：
 
 ```text {.line-numbers}
-<token>	<idf> <filename>:<count>:<tf>:[<position>]|<filename>:<count>:<tf>:[<position>]
+<token>	<filename>:<token_count>:<tf>:[<position>]
 ```
 
-或者表示成：
+IDF 的格式如下：
 
 ```text {.line-numbers}
-<token>	<idf> [<filename>:<count>:<tf>:[<position>]]
+<file_count> <idf>
 ```
 
-这就是我们最后的输出结果，这个结果将以文本的形式保存。
+至此 Job 3 结束，索引结果的 TF 部分保存在目录 `<output_path>` 下的文件里，IDF 部分保存在文件 `<output_path>/inverse_document_freq/<token>` 里。
 
 下面我们来看看具体的实现。
 
@@ -612,7 +615,7 @@ public class Driver extends Configured implements Tool {
     job3.setReducerClass(InvertedIndex.Reduce.class);
     job3.setNumReduceTasks(NUM_REDUCE_TASKS);
     job3.setOutputKeyClass(Text.class);
-    job3.setOutputValueClass(InvertedIndexWritable.class);
+    job3.setOutputValueClass(TermFreqWritable.class);
 
     FileInputFormat.addInputPath(job3, inputPath);
     FileOutputFormat.setOutputPath(job3, outputPath);
@@ -665,35 +668,65 @@ public class InvertedIndex {
 // src/main/java/xyz/hakula/index/InvertedIndex.java
 
 public class InvertedIndex {
-  public static class Reduce extends Reducer<Text, TermFreqWritable, Text, InvertedIndexWritable> {
-    private final InvertedIndexWritable value = new InvertedIndexWritable();
-
-    // Combine the Term Frequencies (TFs) of each token,
-    // and yield the Inverse Document Frequency (IDF).
-    // (<token>, (<filename>, <token_count>, 0, [<positions>]))
-    // -> (<token>, (<idf>, [(<filename>, <token_count>, <tf>, [<positions>])]))
+  public static class Reduce extends Reducer<Text, TermFreqWritable, Text, TermFreqWritable> {
+    // Yield the Inverse Document Frequency (IDF) of each token.
     @Override
     public void reduce(Text key, Iterable<TermFreqWritable> values, Context context)
         throws IOException, InterruptedException {
-      var conf = context.getConfiguration();
-
-      var termFreqList = new ArrayList<TermFreqWritable>();
       long fileCount = 0;
       for (var value : values) {
-        termFreqList.add(WritableUtils.clone(value, conf));
+        context.write(key, value);
         ++fileCount;
       }
+      writeToFile(context, key.toString(), fileCount);
+    }
+
+    private void writeToFile(Context context, String key, long fileCount)
+        throws IOException {
+      var conf = context.getConfiguration();
+      var fs = FileSystem.get(conf);
+      var inverseDocumentFreqPath = conf.get("inverseDocumentFreqPath");
+      var outputPath = new Path(inverseDocumentFreqPath, parseFilename(key));
 
       var totalFileCount = conf.getLong("totalFileCount", 1);
       var inverseDocumentFreq = Math.log((double) totalFileCount / fileCount) / Math.log(2);
-      this.value.set(inverseDocumentFreq, termFreqList.toArray(TermFreqWritable[]::new));
-      context.write(key, this.value);
+      try (var writer = new BufferedWriter(new OutputStreamWriter(fs.create(outputPath, true)))) {
+        writer.write(fileCount + " " + inverseDocumentFreq + "\n");
+      }
     }
+  }
+
+  public static String parseFilename(String filename) throws UnsupportedEncodingException {
+    // Use URL encoding to avoid invalid characters in filename.
+    filename = URLEncoder.encode(
+        filename.toLowerCase(Locale.ROOT),
+        StandardCharsets.UTF_8.name()
+    );
+    // Create buckets to limit the number of files in a single directory.
+    return filename.charAt(0) + "/" + filename;
   }
 }
 ```
 
-最后的 Reducer 就是计算一下每个短语的 IDF。通过这次聚合，我们可以得到出现短语 key 的所有文档的 TF，遍历一次就可以得到出现这个短语的文档总数了。然后我们从配置 `conf` 里读取文档总数 `totalFileCount`，除一下取个对数就得到 IDF 了。最后以 `<token>` 为 key、其余数据为 value 全部写进文件，我们语料库的倒排索引就建立完成了。
+最后的 Reducer 主要就是计算一下每个短语的 IDF。通过这次聚合，我们可以得到出现短语 key 的所有文档的 TF 条目，遍历一次就可以得到出现这个短语的文档总数了。然后我们从配置 `conf` 里读取文档总数 `totalFileCount`，除一下取个对数就得到了 IDF。
+
+在本来的实现中，我将所有的 TF 条目聚合成了一个数组，然后短语的 IDF 也是和这个数组放在了一起。然而不幸的是，出现了和 Job 2 的 Reducer 一样的问题，爆内存了！数据集实在太大，即使只是 1 个短语的索引结果都放不进内存。我推测估计是像 `a`, `the` 这种常见短语，出现次数实在太多，所以就爆了。
+
+于是我做了下调整，将同一短语在不同文件的索引结果分成了不同的条目，在遍历时就直接写进文件，不用再建一个巨大的数组了。聚合这些索引的逻辑交给检索程序完成。这样 TF 条目爆内存的问题是解决了，那 IDF 怎么办呢？和 Job 2 那时一样，IDF 显然是没办法写进索引里了，因为 IDF 要等 TF 条目全遍历完才能得到。因此同理，我们将 IDF 也写进另外的文件中。
+
+本来到这里就结束了，本地也都跑得很正常。结果一上服务器，又出问题了。写入文件时出现了 `java.io.FileNotFoundException` / `org.apache.hadoop.ipc.RemoteException`。这就奇怪了，我是在写入文件，而且参数设定了 `overwrite` 为 `true`，怎么还会提示文件不存在呢？
+
+调查了一段时间后，推测可能有两个原因：
+
+1. HDFS 的目录有文件数量限制。在默认设置中，HDFS 单个目录里的最大文件数量是 1048576 [^3]。而在报错时，检查发现目录 `<output_path>/inverse_document_freq` 下已有超过 600000 个文件，因此确实存在超过最大文件数量的风险。
+
+2. 出现了写入冲突。虽然，首先写入冲突就不该发生，因为在最后的 Reducer 里，每个 key 一定是不一样的，所以不同 Reducer 写入的文件名必然不同。不过，确实还是存在命名冲突的可能。因为我为了泛用性和安全性考虑，即使项目要求里声称，文档的内容格式为分行、**无标点**的英文文本，我还是假设其中可能存在一些特殊字符。因此我在设置文件名时，做了一步 `replaceAll("\\W+", "_")` 处理，将所有非英文数字的字符都替换成 `_`，以确保文件名一定合法。那么假如文档的短语确实不是全英文的，而存在一些诸如 `foobar,` 和 `foobar.` 这样的短语，那就会导致冲突，从而出现并发写的问题。结果我检查目录 `<output_path>/inverse_document_freq` 里的文件发现，竟然真的有包含 `_` 的文件名。而且检查日志时也发现，报错的全部都是包含 `_` 的短语。所以推测比较可能是这个问题。
+
+对于第一个问题，我的解决方案是：加个桶。也就是保存文件 `<token>` 时，加一级目录，保存到以 `<token>` 首字母命名的桶里。例如短语 `foobar` 的 IDF 就是保存到文件 `<output_path>/inverse_document_freq/f/foobar` 里。这样至少可以让单目录下的文件总数除以 26 了，如果还不够的话，我们也可以把桶名提高到 2 ~ 3 位字符，就是逻辑会稍微复杂一点点。
+
+对于第二个问题，我的解决方案是：采用 URL 编码。既然简单替换成 `_` 不行，那就直接编码成 URL 格式嘛（利用 `URLEncoder.encode()`）。这下总归没问题了，而且也不会出现命名冲突。
+
+至此，我们就成功实现了一个索引程序。
 
 #### 5.6 Woogle
 
@@ -703,9 +736,6 @@ public class InvertedIndex {
 // src/main/java/xyz/hakula/woogle/Woogle.java
 
 public class Woogle extends Configured implements Tool {
-  private static final String ANSI_RED = "\033[1;31m";
-  private static final String ANSI_RESET = "\033[0m";
-
   private static final Logger log = Logger.getLogger(Woogle.class.getName());
 
   public static void main(String[] args) throws Exception {
@@ -719,39 +749,179 @@ public class Woogle extends Configured implements Tool {
       System.out.print("Please input a keyword:\n> ");
       key = scanner.nextLine().trim().toLowerCase(Locale.ROOT);
     }
-    if (key.isBlank()) return 0;
-
-    var partition = getPartition(key);
-    var inputPath = new Path(args[0]);
-    var filePath = new Path(inputPath, String.format("part-r-%05d", partition));
-
-    var conf = getConf();
-    var fs = FileSystem.get(conf);
-    try (var reader = new BufferedReader(new InputStreamReader(fs.open(filePath)))) {
-      search(reader, key);
+    if (!key.isBlank()) {
+      var indexPath = new Path(args[0]);
+      searchAndPrint(key, indexPath);
     }
     return 0;
   }
 }
 ```
 
-先讲框架，流程上就是：
+先讲大体框架，流程上很简单，就是：
 
 1. 提示用户输入一个关键词
-2. 利用函数 `getPartition()` 得到关键词所在的索引文件位置
-3. 遍历这个索引文件，搜索并输出相应的倒排索引
+2. 在索引文件夹里搜索并输出结果
 
 接下来讲一下具体实现。
 
-##### 5.6.1 getPartition()
+##### 5.6.1 `searchAndPrint()`
 
-##### 5.6.2 search()
+```java {.line-numbers}
+// src/main/java/xyz/hakula/woogle/Woogle.java
 
-##### 5.6.3 printResult()
+public class Woogle extends Configured implements Tool {
+  protected void searchAndPrint(String key, Path indexPath) throws IOException {
+    var conf = getConf();
+    var fs = FileSystem.get(conf);
 
-## 贡献者
+    InverseDocumentFreq idf;
+    var inverseDocumentFreqPath = new Path(indexPath, "inverse_document_freq");
+    var filePath = new Path(inverseDocumentFreqPath, InvertedIndex.parseFilename(key));
+    try (var reader = new BufferedReader(new InputStreamReader(fs.open(filePath)))) {
+      var line = reader.readLine();
+      idf = InverseDocumentFreq.parse(line);
+      printInverseDocumentFreq(key, idf);
+    } catch (FileNotFoundException e) {
+      System.out.println(key + ": not found");
+      return;
+    }
 
-- [**Hakula Chen**](https://github.com/hakula139)<[i@hakula.xyz](mailto:i@hakula.xyz)> - 复旦大学
+    TermFreq tf;
+    var partition = getPartition(key);
+    var termFreqsPath = new Path(indexPath, String.format("part-r-%05d", partition));
+    try (var reader = new BufferedReader(new InputStreamReader(fs.open(termFreqsPath)))) {
+      var line = "";
+      while ((line = reader.readLine()) != null) {
+        var lineSplit = line.split("\t");
+        var token = lineSplit[0];
+        if (Objects.equals(key, token)) {
+          try {
+            tf = TermFreq.parse(lineSplit[1]);
+            printInvertedIndex(tf, idf);
+          } catch (Exception e) {
+            log.warn(token + ": invalid index entry, error: " + e);
+          }
+        }
+      }
+    } catch (FileNotFoundException e) {
+      log.error(key + ": index not exists");
+    }
+  }
+}
+```
+
+这个是检索程序的核心代码。总体分两步走：
+
+1. 根据关键词 `<key>`，查找 IDF 文件，读取文件的命名方式同 Job 3 的 Reducer。如果能查到，说明关键词在索引里存在，解析出 IDF 并继续接下来的步骤，否则输出 `<key>: not found`。
+2. 根据关键词 `<key>`，先利用函数 `getPartition()` 定位到相应的 TF 文件（将在下一个章节讲解），然后逐行遍历查询，查询到与 `<key>` 相同的 `<token>` 后，解析出 TF 并输出。
+
+为什么要遍历查询呢？主要还是因为并行的 MapReduce 程序不保序，不一定可以进行二分查找。事实上如果觉得慢的话，完全可以把最后一个 Reducer 的任务数量设置得大一点，因为最后索引的分段数量就等于这个 Reducer 的任务数量，总可以设置到一个足够大的值，使得线性复杂度的耗时可以接受。
+
+##### 5.6.2 `getPartition()`
+
+```java {.line-numbers}
+// src/main/java/xyz/hakula/woogle/Woogle.java
+
+public class Woogle extends Configured implements Tool {
+  protected int getPartition(String key) {
+    var textKey = new Text(key);
+    return (textKey.hashCode() & Integer.MAX_VALUE) % Driver.NUM_REDUCE_TASKS;
+  }
+}
+```
+
+函数 `getPartition()` 的实现很简单，其实就是沿用了 Job 2 的默认 Partitioner 的分配方法，也就是直接对 `<key>` 哈希，然后 mod 一下 Reducer 的任务数量。这样就可以定位到当时 `reduce()` 这个 `<key>` 的 Reducer，从而定位到相应的索引片段。
+
+##### 5.6.3 `InverseDocumentFreq.parse()`
+
+```java {.line-numbers}
+// src/main/java/xyz/hakula/woogle/model/InverseDocumentFreq.java
+
+public record InverseDocumentFreq(long fileCount, double inverseDocumentFreq) {
+  private static final String DELIM = " ";
+
+  public static InverseDocumentFreq parse(String entry) {
+    var entrySplit = entry.split(Pattern.quote(DELIM));
+    var fileCount = Long.parseLong(entrySplit[0]);
+    var inverseDocumentFreq = Double.parseDouble(entrySplit[1]);
+    return new InverseDocumentFreq(fileCount, inverseDocumentFreq);
+  }
+}
+```
+
+函数 `InverseDocumentFreq.parse()` 就是解析一下 IDF 文件的内容，简单 `split()` 一下就行。
+
+##### 5.6.4 `printInverseDocumentFreq()`
+
+```java {.line-numbers}
+// src/main/java/xyz/hakula/woogle/Woogle.java
+
+public class Woogle extends Configured implements Tool {
+  private void printInverseDocumentFreq(String token, InverseDocumentFreq idf) {
+    System.out.printf(
+        "%s: IDF = %6f | found in %d files:\n",
+        token,
+        idf.inverseDocumentFreq(),
+        idf.fileCount()
+    );
+  }
+}
+```
+
+对 IDF 进行普通的格式化输出。
+
+##### 5.6.5 `TermFreq.parse()`
+
+```java {.line-numbers}
+// src/main/java/xyz/hakula/woogle/model/TermFreq.java
+
+public record TermFreq(String filename, long tokenCount, double termFreq, long[] positions) {
+  private static final String DELIM = ":";
+  private static final String POS_ARRAY_DELIM = ";";
+
+  public static TermFreq parse(String entry) {
+    var entrySplit = entry.split(Pattern.quote(DELIM));
+    var filename = entrySplit[0];
+    var tokenCount = Long.parseLong(entrySplit[1]);
+    var termFreq = Double.parseDouble(entrySplit[2]);
+    var positionsSplit = entrySplit[3].split(Pattern.quote(POS_ARRAY_DELIM));
+    var positions = Arrays.stream(positionsSplit).mapToLong(Long::parseLong).toArray();
+    return new TermFreq(filename, tokenCount, termFreq, positions);
+  }
+}
+```
+
+函数 `TermFreq.parse()` 就是解析一下 TF 条目的内容，同样简单 `split()` 一下就行。`positions` 的解析用了个比较函数式的写法。其实 MapReduce 本身就很函数式，只可惜 Java 不太函数式，写起来就不怎么优雅。
+
+##### 5.6.6 `printInvertedIndex()`
+
+```java {.line-numbers}
+// src/main/java/xyz/hakula/woogle/Woogle.java
+
+public class Woogle extends Configured implements Tool {
+  private void printInvertedIndex(TermFreq tf, InverseDocumentFreq idf) {
+    System.out.printf(
+        "  %s: TF = %6e (%d times) | TF-IDF = %6e | positions:",
+        tf.filename(),
+        tf.termFreq(),
+        tf.tokenCount(),
+        tf.termFreq() * idf.inverseDocumentFreq()
+    );
+    for (var position : tf.positions()) {
+      System.out.print(" ");
+      System.out.print(position);
+    }
+    System.out.println();
+  }
+}
+```
+
+对 TF 进行普通的格式化输出。
+
+至此，我们就成功实现了一个检索程序。
+
+当然有了索引文件，想写个网页界面啦，或者对结果按 TF-IDF 的大小排个序啦都很容易。主要还是期末季太忙了，实在没时间，不然都好做。
 
 ## 许可协议
 
@@ -759,3 +929,4 @@ public class Woogle extends Configured implements Tool {
 
 [^1]: [java - Get unique line number from a input file in MapReduce mapper - Stack Overflow](https://stackoverflow.com/questions/29786397/get-unique-line-number-from-a-input-file-in-mapreduce-mapper)  
 [^2]: [java - Static variable value is not changing in mapper function - Stack Overflow](https://stackoverflow.com/questions/41280397/static-variable-value-is-not-changing-in-mapper-function)  
+[^3]: [Apache Hadoop 3.3.1 - Hadoop - Configuration - hdfs-default.xml](https://hadoop.apache.org/docs/r3.3.1/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml)  
