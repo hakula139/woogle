@@ -8,10 +8,9 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import xyz.hakula.index.io.TermFreqWritable;
 
-import java.io.*;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Locale;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 public class InvertedIndex {
   public static class Map extends Mapper<Text, TermFreqWritable, Text, TermFreqWritable> {
@@ -35,43 +34,28 @@ public class InvertedIndex {
     }
   }
 
-  public static class Reduce extends Reducer<Text, TermFreqWritable, Text, TermFreqWritable> {
+  public static class Reduce extends Reducer<Text, TermFreqWritable, Text, Text> {
+    private static final String IDF_SIGN = "$";
+    private static final String DELIM = " ";
+
+    private final Text value = new Text();
+
     // Yield the Inverse Document Frequency (IDF) of each token.
     @Override
     public void reduce(Text key, Iterable<TermFreqWritable> values, Context context)
         throws IOException, InterruptedException {
       long fileCount = 0;
       for (TermFreqWritable value : values) {
-        context.write(key, value);
+        this.value.set(value.toString());
+        context.write(key, this.value);
         ++fileCount;
       }
-      writeToFile(context, key.toString(), fileCount);
-    }
 
-    private void writeToFile(Context context, String key, long fileCount)
-        throws IOException {
       Configuration conf = context.getConfiguration();
-      FileSystem fs = FileSystem.get(conf);
-      String inverseDocumentFreqPath = conf.get("inverseDocumentFreqPath");
-      Path outputPath = new Path(inverseDocumentFreqPath, parseFilename(key));
-
       long totalFileCount = conf.getLong("totalFileCount", 1);
       double inverseDocumentFreq = Math.log((double) totalFileCount / fileCount) / Math.log(2);
-      try (BufferedWriter writer = new BufferedWriter(
-          new OutputStreamWriter(fs.create(outputPath, true))
-      )) {
-        writer.write(fileCount + " " + inverseDocumentFreq + "\n");
-      }
+      this.value.set(IDF_SIGN + fileCount + DELIM + inverseDocumentFreq);
+      context.write(key, this.value);
     }
-  }
-
-  public static String parseFilename(String filename) throws UnsupportedEncodingException {
-    // Use URL encoding to avoid invalid characters in filename.
-    filename = URLEncoder.encode(
-        filename.toLowerCase(Locale.ROOT),
-        StandardCharsets.UTF_8.name()
-    );
-    // Create buckets to limit the number of files in a single directory.
-    return filename.charAt(0) + "/" + filename;
   }
 }

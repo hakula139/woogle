@@ -35,7 +35,6 @@ public class Driver extends Configured implements Tool {
     Path tempPath1 = new Path(tempPath, "output_job1");
     Path tempPath2 = new Path(tempPath, "output_job2");
     Path fileTokenCountPath = new Path(tempPath, "file_token_count");
-    Path inverseDocumentFreqPath = new Path(outputPath, "inverse_document_freq");
 
     Configuration conf = getConf();
     try (FileSystem fs = FileSystem.get(conf)) {
@@ -43,7 +42,6 @@ public class Driver extends Configured implements Tool {
       if (totalFileCount == 0) return 0;
       conf.setLong("totalFileCount", totalFileCount);
       conf.set("fileTokenCountPath", fileTokenCountPath.toString());
-      conf.set("inverseDocumentFreqPath", inverseDocumentFreqPath.toString());
 
       if (!fs.exists(tempPath1) && !runJob1(inputPath, tempPath1)) System.exit(1);
       if (!fs.exists(tempPath2) && !runJob2(tempPath1, tempPath2)) System.exit(1);
@@ -110,7 +108,7 @@ public class Driver extends Configured implements Tool {
     job3.setReducerClass(InvertedIndex.Reduce.class);
     job3.setNumReduceTasks(NUM_REDUCE_TASKS);
     job3.setOutputKeyClass(Text.class);
-    job3.setOutputValueClass(TermFreqWritable.class);
+    job3.setOutputValueClass(Text.class);
 
     FileInputFormat.addInputPath(job3, inputPath);
     FileOutputFormat.setOutputPath(job3, outputPath);
