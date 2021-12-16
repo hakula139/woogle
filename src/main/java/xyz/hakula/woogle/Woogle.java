@@ -93,10 +93,11 @@ public class Woogle extends Configured implements Tool {
 
     for (var tf : tfs) {
       System.out.printf(
-          "  %s: TF = %6e (%d times) | TF-IDF = %6e | positions:",
+          "  %s: TF = %6e (%d time%s) | TF-IDF = %6e | positions:",
           tf.filename(),
           tf.termFreq(),
           tf.tokenCount(),
+          tf.tokenCount() == 1 ? "" : "s",
           tf.termFreq() * idf.inverseDocumentFreq()
       );
       for (var position : tf.positions()) {
