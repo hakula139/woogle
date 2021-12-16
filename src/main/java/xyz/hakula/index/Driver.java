@@ -13,9 +13,12 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-import xyz.hakula.index.io.*;
+import xyz.hakula.index.io.LongArrayWritable;
+import xyz.hakula.index.io.TermFreqWritable;
+import xyz.hakula.index.io.TokenFromFileWritable;
+import xyz.hakula.index.io.TokenPositionsWritable;
 
-import java.io.*;
+import java.io.IOException;
 
 public class Driver extends Configured implements Tool {
   public static final int NUM_REDUCE_TASKS = 128;
