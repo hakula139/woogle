@@ -62,8 +62,7 @@ public class Woogle extends Configured implements Tool {
             if (entry.charAt(0) != '$') {
               tfs.add(TermFreq.parse(entry));
             } else {
-              InverseDocumentFreq idf = InverseDocumentFreq.parse(entry.substring(1));
-              print(key, idf, tfs);
+              print(key, InverseDocumentFreq.parse(entry), tfs);
               return;
             }
           } catch (Exception e) {
@@ -94,10 +93,11 @@ public class Woogle extends Configured implements Tool {
 
     for (TermFreq tf : tfs) {
       System.out.printf(
-          "  %s: TF = %6e (%d times) | TF-IDF = %6e | positions:",
+          "  %s: TF = %6e (%d time%s) | TF-IDF = %6e | positions:",
           tf.filename(),
           tf.termFreq(),
           tf.tokenCount(),
+          tf.tokenCount() == 1 ? "" : "s",
           tf.termFreq() * idf.inverseDocumentFreq()
       );
       for (long position : tf.positions()) {

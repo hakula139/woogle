@@ -6,6 +6,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
+import xyz.hakula.index.io.InverseDocumentFreqWritable;
 import xyz.hakula.index.io.TermFreqWritable;
 
 import java.io.BufferedReader;
@@ -35,10 +36,7 @@ public class InvertedIndex {
   }
 
   public static class Reduce extends Reducer<Text, TermFreqWritable, Text, Text> {
-    private static final String IDF_SIGN = "$";
-    private static final String DELIM = " ";
-
-    private final Text value = new Text();
+    private final Text result = new Text();
 
     // Yield the Inverse Document Frequency (IDF) of each token.
     @Override
@@ -46,16 +44,16 @@ public class InvertedIndex {
         throws IOException, InterruptedException {
       long fileCount = 0;
       for (TermFreqWritable value : values) {
-        this.value.set(value.toString());
-        context.write(key, this.value);
+        result.set(value.toString());
+        context.write(key, result);
         ++fileCount;
       }
 
       Configuration conf = context.getConfiguration();
       long totalFileCount = conf.getLong("totalFileCount", 1);
       double inverseDocumentFreq = Math.log((double) totalFileCount / fileCount) / Math.log(2);
-      this.value.set(IDF_SIGN + fileCount + DELIM + inverseDocumentFreq);
-      context.write(key, this.value);
+      result.set(new InverseDocumentFreqWritable(fileCount, inverseDocumentFreq).toString());
+      context.write(key, result);
     }
   }
 }
