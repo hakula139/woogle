@@ -9,6 +9,7 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 import xyz.hakula.index.Driver;
+import xyz.hakula.index.InvertedIndex;
 import xyz.hakula.woogle.model.InverseDocumentFreq;
 import xyz.hakula.woogle.model.TermFreq;
 
@@ -46,11 +47,9 @@ public class Woogle extends Configured implements Tool {
     var fs = FileSystem.get(conf);
 
     InverseDocumentFreq idf;
-    var inverseDocumentFreqPath = new Path(
-        indexPath,
-        "inverse_document_freq/" + key.replaceAll("\\W+", "_")
-    );
-    try (var reader = new BufferedReader(new InputStreamReader(fs.open(inverseDocumentFreqPath)))) {
+    var inverseDocumentFreqPath = new Path(indexPath, "inverse_document_freq");
+    var filePath = new Path(inverseDocumentFreqPath, InvertedIndex.parseFilename(key));
+    try (var reader = new BufferedReader(new InputStreamReader(fs.open(filePath)))) {
       var line = reader.readLine();
       idf = InverseDocumentFreq.parse(line);
       printInverseDocumentFreq(key, idf);
