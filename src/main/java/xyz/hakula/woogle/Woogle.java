@@ -62,8 +62,7 @@ public class Woogle extends Configured implements Tool {
             if (entry.charAt(0) != '$') {
               tfs.add(TermFreq.parse(entry));
             } else {
-              var idf = InverseDocumentFreq.parse(entry.substring(1));
-              print(key, idf, tfs);
+              print(key, InverseDocumentFreq.parse(entry), tfs);
               return;
             }
           } catch (Exception e) {
