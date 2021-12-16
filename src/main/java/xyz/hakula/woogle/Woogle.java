@@ -9,7 +9,6 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 import xyz.hakula.index.Driver;
-import xyz.hakula.index.InvertedIndex;
 import xyz.hakula.woogle.model.InverseDocumentFreq;
 import xyz.hakula.woogle.model.TermFreq;
 
@@ -17,6 +16,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Scanner;
@@ -37,39 +37,35 @@ public class Woogle extends Configured implements Tool {
     }
     if (!key.isBlank()) {
       var indexPath = new Path(args[0]);
-      searchAndPrint(key, indexPath);
+      search(key, indexPath);
     }
     return 0;
   }
 
-  protected void searchAndPrint(String key, Path indexPath) throws IOException {
+  protected void search(String key, Path indexPath) throws IOException {
     var conf = getConf();
     var fs = FileSystem.get(conf);
-
-    InverseDocumentFreq idf;
-    var inverseDocumentFreqPath = new Path(indexPath, "inverse_document_freq");
-    var filePath = new Path(inverseDocumentFreqPath, InvertedIndex.parseFilename(key));
-    try (var reader = new BufferedReader(new InputStreamReader(fs.open(filePath)))) {
-      var line = reader.readLine();
-      idf = InverseDocumentFreq.parse(line);
-      printInverseDocumentFreq(key, idf);
-    } catch (FileNotFoundException e) {
-      System.out.println(key + ": not found");
-      return;
-    }
-
-    TermFreq tf;
     var partition = getPartition(key);
-    var termFreqsPath = new Path(indexPath, String.format("part-r-%05d", partition));
-    try (var reader = new BufferedReader(new InputStreamReader(fs.open(termFreqsPath)))) {
+    var filePath = new Path(indexPath, String.format("part-r-%05d", partition));
+
+    try (var reader = new BufferedReader(new InputStreamReader(fs.open(filePath)))) {
+      var tfs = new ArrayList<TermFreq>();
       var line = "";
+
       while ((line = reader.readLine()) != null) {
         var lineSplit = line.split("\t");
         var token = lineSplit[0];
+        var entry = lineSplit[1];
+
         if (Objects.equals(key, token)) {
           try {
-            tf = TermFreq.parse(lineSplit[1]);
-            printInvertedIndex(tf, idf);
+            if (entry.charAt(0) != '$') {
+              tfs.add(TermFreq.parse(entry));
+            } else {
+              var idf = InverseDocumentFreq.parse(entry.substring(1));
+              print(key, idf, tfs);
+              return;
+            }
           } catch (Exception e) {
             log.warn(token + ": invalid index entry, error: " + e);
           }
@@ -78,6 +74,8 @@ public class Woogle extends Configured implements Tool {
     } catch (FileNotFoundException e) {
       log.error(key + ": index not exists");
     }
+
+    System.out.println(key + ": not found");
   }
 
   protected int getPartition(String key) {
@@ -85,27 +83,28 @@ public class Woogle extends Configured implements Tool {
     return (textKey.hashCode() & Integer.MAX_VALUE) % Driver.NUM_REDUCE_TASKS;
   }
 
-  private void printInverseDocumentFreq(String token, InverseDocumentFreq idf) {
+  protected void print(String token, InverseDocumentFreq idf, ArrayList<TermFreq> tfs) {
     System.out.printf(
-        "%s: IDF = %6f | found in %d files:\n",
+        "%s: IDF = %6f | found in %d file%s:\n",
         token,
         idf.inverseDocumentFreq(),
-        idf.fileCount()
+        idf.fileCount(),
+        idf.fileCount() == 1 ? "" : "s"
     );
-  }
 
-  private void printInvertedIndex(TermFreq tf, InverseDocumentFreq idf) {
-    System.out.printf(
-        "  %s: TF = %6e (%d times) | TF-IDF = %6e | positions:",
-        tf.filename(),
-        tf.termFreq(),
-        tf.tokenCount(),
-        tf.termFreq() * idf.inverseDocumentFreq()
-    );
-    for (var position : tf.positions()) {
-      System.out.print(" ");
-      System.out.print(position);
+    for (var tf : tfs) {
+      System.out.printf(
+          "  %s: TF = %6e (%d times) | TF-IDF = %6e | positions:",
+          tf.filename(),
+          tf.termFreq(),
+          tf.tokenCount(),
+          tf.termFreq() * idf.inverseDocumentFreq()
+      );
+      for (var position : tf.positions()) {
+        System.out.print(" ");
+        System.out.print(position);
+      }
+      System.out.println();
     }
-    System.out.println();
   }
 }
