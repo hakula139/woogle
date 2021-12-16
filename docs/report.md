@@ -522,7 +522,7 @@ public class TokenCount {
     // Yield the token count of each token in each file,
     // and calculate the total token count of each file.
     // (<filename>, (<token>, [<offset>]))
-    // -> (<token>, (<filename>, <tokenCount>, 0, [<offsets>]))
+    // -> (<token>, (<filename>, <token_count>, 0, [<positions>]))
     @Override
     public void reduce(Text key, Iterable<TokenPositionsWritable> values, Context context)
         throws IOException, InterruptedException {
@@ -656,8 +656,8 @@ public class InvertedIndex {
 
     // Combine the Term Frequencies (TFs) of each token,
     // and yield the Inverse Document Frequency (IDF).
-    // (<token>, (<filename>, <tokenCount>, 0, [<offsets>]))
-    // -> (<token>, (<idf>, [(<filename>, <tokenCount>, <tf>, [<offsets>])]))
+    // (<token>, (<filename>, <token_count>, 0, [<positions>]))
+    // -> (<token>, (<idf>, [(<filename>, <token_count>, <tf>, [<positions>])]))
     @Override
     public void reduce(Text key, Iterable<TermFreqWritable> values, Context context)
         throws IOException, InterruptedException {

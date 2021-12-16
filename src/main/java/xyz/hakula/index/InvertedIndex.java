@@ -41,8 +41,8 @@ public class InvertedIndex {
 
     // Combine the Term Frequencies (TFs) of each token,
     // and yield the Inverse Document Frequency (IDF).
-    // (<token>, (<filename>, <tokenCount>, <tf>, [<offsets>]))
-    // -> (<token>, (<idf>, [(<filename>, <tokenCount>, <tf>, [<offsets>])]))
+    // (<token>, (<filename>, <token_count>, <tf>, [<positions>]))
+    // -> (<token>, (<idf>, [(<filename>, <token_count>, <tf>, [<positions>])]))
     @Override
     public void reduce(Text key, Iterable<TermFreqWritable> values, Context context)
         throws IOException, InterruptedException {
