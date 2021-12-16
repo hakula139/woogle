@@ -5,7 +5,6 @@ import java.util.regex.Pattern;
 
 public class TermFreq {
   private static final String DELIM = ":";
-  private static final String ARRAY_DELIM = "|";
   private static final String POS_ARRAY_DELIM = ";";
 
   private final String filename;
@@ -28,11 +27,6 @@ public class TermFreq {
     String[] positionsSplit = entrySplit[3].split(Pattern.quote(POS_ARRAY_DELIM));
     long[] positions = Arrays.stream(positionsSplit).mapToLong(Long::parseLong).toArray();
     return new TermFreq(filename, tokenCount, termFreq, positions);
-  }
-
-  public static TermFreq[] parseArray(String entries) {
-    String[] entriesSplit = entries.split(Pattern.quote(ARRAY_DELIM));
-    return Arrays.stream(entriesSplit).map(TermFreq::parse).toArray(TermFreq[]::new);
   }
 
   public String filename() {
