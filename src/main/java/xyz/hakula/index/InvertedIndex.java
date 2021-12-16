@@ -9,6 +9,9 @@ import org.apache.hadoop.mapreduce.Reducer;
 import xyz.hakula.index.io.TermFreqWritable;
 
 import java.io.*;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 public class InvertedIndex {
   public static class Map extends Mapper<Text, TermFreqWritable, Text, TermFreqWritable> {
@@ -50,7 +53,7 @@ public class InvertedIndex {
       Configuration conf = context.getConfiguration();
       FileSystem fs = FileSystem.get(conf);
       String inverseDocumentFreqPath = conf.get("inverseDocumentFreqPath");
-      Path outputPath = new Path(inverseDocumentFreqPath, key.replaceAll("\\W+", "_"));
+      Path outputPath = new Path(inverseDocumentFreqPath, parseFilename(key));
 
       long totalFileCount = conf.getLong("totalFileCount", 1);
       double inverseDocumentFreq = Math.log((double) totalFileCount / fileCount) / Math.log(2);
@@ -60,5 +63,15 @@ public class InvertedIndex {
         writer.write(fileCount + " " + inverseDocumentFreq + "\n");
       }
     }
+  }
+
+  public static String parseFilename(String filename) throws UnsupportedEncodingException {
+    // Use URL encoding to avoid invalid characters in filename.
+    filename = URLEncoder.encode(
+        filename.toLowerCase(Locale.ROOT),
+        StandardCharsets.UTF_8.name()
+    );
+    // Create buckets to limit the number of files in a single directory.
+    return filename.charAt(0) + "/" + filename;
   }
 }
