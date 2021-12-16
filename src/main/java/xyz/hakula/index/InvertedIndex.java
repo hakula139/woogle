@@ -38,7 +38,7 @@ public class InvertedIndex {
     public void reduce(Text key, Iterable<TermFreqWritable> values, Context context)
         throws IOException, InterruptedException {
       long fileCount = 0;
-      for (var value : values) {
+      for (TermFreqWritable value : values) {
         context.write(key, value);
         ++fileCount;
       }

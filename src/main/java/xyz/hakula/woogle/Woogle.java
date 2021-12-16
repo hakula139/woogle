@@ -35,7 +35,7 @@ public class Woogle extends Configured implements Tool {
       key = scanner.nextLine().trim().toLowerCase(Locale.ROOT);
     }
     if (!key.isEmpty()) {
-      var indexPath = new Path(args[0]);
+      Path indexPath = new Path(args[0]);
       searchAndPrint(key, indexPath);
     }
     return 0;
@@ -50,7 +50,9 @@ public class Woogle extends Configured implements Tool {
         indexPath,
         "inverse_document_freq/" + key.replaceAll("\\W+", "_")
     );
-    try (var reader = new BufferedReader(new InputStreamReader(fs.open(inverseDocumentFreqPath)))) {
+    try (BufferedReader reader = new BufferedReader(
+        new InputStreamReader(fs.open(inverseDocumentFreqPath))
+    )) {
       String line = reader.readLine();
       idf = InverseDocumentFreq.parse(line);
       printInverseDocumentFreq(key, idf);
@@ -105,7 +107,7 @@ public class Woogle extends Configured implements Tool {
         tf.tokenCount(),
         tf.termFreq() * idf.inverseDocumentFreq()
     );
-    for (var position : tf.positions()) {
+    for (long position : tf.positions()) {
       System.out.print(" ");
       System.out.print(position);
     }
