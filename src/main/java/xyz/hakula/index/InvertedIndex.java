@@ -3,16 +3,11 @@ package xyz.hakula.index;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
-import xyz.hakula.index.io.InvertedIndexWritable;
 import xyz.hakula.index.io.TermFreqWritable;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
+import java.io.*;
 
 public class InvertedIndex {
   public static class Map extends Mapper<Text, TermFreqWritable, Text, TermFreqWritable> {
@@ -36,29 +31,31 @@ public class InvertedIndex {
     }
   }
 
-  public static class Reduce extends Reducer<Text, TermFreqWritable, Text, InvertedIndexWritable> {
-    private final InvertedIndexWritable value = new InvertedIndexWritable();
-
-    // Combine the Term Frequencies (TFs) of each token,
-    // and yield the Inverse Document Frequency (IDF).
-    // (<token>, (<filename>, <token_count>, <tf>, [<positions>]))
-    // -> (<token>, (<idf>, [(<filename>, <token_count>, <tf>, [<positions>])]))
+  public static class Reduce extends Reducer<Text, TermFreqWritable, Text, TermFreqWritable> {
+    // Yield the Inverse Document Frequency (IDF) of each token.
     @Override
     public void reduce(Text key, Iterable<TermFreqWritable> values, Context context)
         throws IOException, InterruptedException {
-      var conf = context.getConfiguration();
-
-      var termFreqList = new ArrayList<TermFreqWritable>();
       long fileCount = 0;
       for (var value : values) {
-        termFreqList.add(WritableUtils.clone(value, conf));
+        context.write(key, value);
         ++fileCount;
       }
+      writeToFile(context, key.toString(), fileCount);
+    }
+
+    private void writeToFile(Context context, String key, long fileCount)
+        throws IOException {
+      var conf = context.getConfiguration();
+      var fs = FileSystem.get(conf);
+      var inverseDocumentFreqPath = conf.get("inverseDocumentFreqPath");
+      var outputPath = new Path(inverseDocumentFreqPath, key.replaceAll("\\W+", "_"));
 
       var totalFileCount = conf.getLong("totalFileCount", 1);
       var inverseDocumentFreq = Math.log((double) totalFileCount / fileCount) / Math.log(2);
-      this.value.set(inverseDocumentFreq, termFreqList.toArray(TermFreqWritable[]::new));
-      context.write(key, this.value);
+      try (var writer = new BufferedWriter(new OutputStreamWriter(fs.create(outputPath, true)))) {
+        writer.write(fileCount + " " + inverseDocumentFreq + "\n");
+      }
     }
   }
 }
