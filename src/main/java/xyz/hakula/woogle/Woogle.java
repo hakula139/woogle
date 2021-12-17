@@ -100,9 +100,14 @@ public class Woogle extends Configured implements Tool {
           tf.tokenCount() == 1 ? "" : "s",
           tf.termFreq() * idf.inverseDocumentFreq()
       );
+      int limit = 10;
       for (long position : tf.positions()) {
         System.out.print(" ");
         System.out.print(position);
+        if (--limit == 0) {
+          System.out.print(" ...");
+          break;
+        }
       }
       System.out.println();
     }

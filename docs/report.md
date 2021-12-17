@@ -100,7 +100,7 @@ hadoop jar index.jar <input_path> <output_path> <temp_path>
 对于 `woogle.jar` 文件，类似地执行以下命令：
 
 ```bash
-java -jar woogle.jar <index_path>
+hadoop jar woogle.jar <index_path>
 ```
 
 其中，`<index_path>` 表示指定的索引位置，通常也就是前面传入 `index.jar` 的 `<output_path>`。
@@ -847,9 +847,14 @@ public class Woogle extends Configured implements Tool {
           tf.tokenCount() == 1 ? "" : "s",
           tf.termFreq() * idf.inverseDocumentFreq()
       );
+      int limit = 10;
       for (var position : tf.positions()) {
         System.out.print(" ");
         System.out.print(position);
+        if (--limit == 0) {
+          System.out.print(" ...");
+          break;
+        }
       }
       System.out.println();
     }
@@ -857,7 +862,7 @@ public class Woogle extends Configured implements Tool {
 }
 ```
 
-对 IDF 和 TF 进行普通的格式化输出，这就是我们的搜索结果。
+对 IDF 和 TF 进行普通的格式化输出，这就是我们的搜索结果。这里在输出 `<positions>` 的时候，为了防止刷屏，默认只显示前 10 个 `<position>`。
 
 至此，我们就成功实现了一个检索程序。
 
